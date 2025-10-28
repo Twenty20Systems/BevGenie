@@ -1,14 +1,13 @@
 /**
- * SSE Chat Streaming Endpoint - Scalable Implementation
+ * SSE Chat Streaming Endpoint - Web Streams API Implementation
  *
  * POST /api/chat/stream
  *
  * Real-time streaming of page generation stages
- * Uses proper Node.js stream handling for scalability
+ * Uses Web Streams API (proper Next.js app router pattern)
  */
 
 import { NextRequest } from 'next/server';
-import { Readable } from 'stream';
 import { getSession, updatePersona, addConversationMessage as addConvMsg, getConversationHistory } from '@/lib/session/session';
 import { validateAIConfiguration } from '@/lib/ai/orchestrator';
 import { detectPersonaSignals, updatePersonaWithSignals } from '@/lib/ai/persona-detection';
@@ -47,10 +46,34 @@ export async function POST(request: NextRequest) {
 
     const conversationHistory = await getConversationHistory();
 
-    // Create a readable stream that processes the entire pipeline
-    const readable = Readable.from(processStream(message, session, conversationHistory));
+    // Use Web Streams API for proper Next.js compatibility
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          await processStreamWithController(
+            message,
+            session,
+            conversationHistory,
+            controller,
+            encoder
+          );
+          controller.close();
+        } catch (error) {
+          console.error('[Stream] Fatal error:', error);
+          controller.enqueue(
+            encoder.encode(
+              createEvent('error', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              })
+            )
+          );
+          controller.close();
+        }
+      },
+    });
 
-    return new Response(readable as any, {
+    return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
@@ -64,19 +87,27 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function* processStream(
+async function processStreamWithController(
   message: string,
   session: any,
-  conversationHistory: any[]
-) {
+  conversationHistory: any[],
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder
+): Promise<void> {
   let updatedPersona: PersonaScores = session.user.persona;
   let aiResponse = '';
   let generatedPage: any = null;
   const signalDescriptions: string[] = [];
 
   try {
+    // Helper to enqueue event
+    const sendEvent = (eventType: string, data: any) => {
+      const eventStr = createEvent(eventType, data);
+      controller.enqueue(encoder.encode(eventStr));
+    };
+
     // Stage 0: Init
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'init',
       status: 'active',
       stageName: 'Initializing...',
@@ -86,7 +117,7 @@ async function* processStream(
     await delay(150);
 
     // Stage 1: Intent
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'intent',
       status: 'active',
       stageName: 'Analyzing your question...',
@@ -99,7 +130,7 @@ async function* processStream(
       updatedPersona
     );
 
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'intent',
       status: 'complete',
       stageName: 'Question analyzed',
@@ -109,7 +140,7 @@ async function* processStream(
     await delay(100);
 
     // Stage 2: Signals
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'signals',
       status: 'active',
       stageName: 'Detecting your profile...',
@@ -135,7 +166,7 @@ async function* processStream(
 
     updatedPersona = updatePersonaWithSignals(updatedPersona, signals);
 
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'signals',
       status: 'complete',
       stageName: 'Profile updated',
@@ -145,7 +176,7 @@ async function* processStream(
     await delay(100);
 
     // Stage 3: Knowledge
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'knowledge',
       status: 'active',
       stageName: 'Searching knowledge base...',
@@ -154,7 +185,7 @@ async function* processStream(
 
     const knowledgeContext = await getContextForLLM(message, updatedPersona, 5);
 
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'knowledge',
       status: 'complete',
       stageName: 'Context gathered',
@@ -164,7 +195,7 @@ async function* processStream(
     await delay(100);
 
     // Stage 4: Response
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'response',
       status: 'active',
       stageName: 'Generating response...',
@@ -206,7 +237,7 @@ async function* processStream(
       aiResponse = 'Error generating response';
     }
 
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'response',
       status: 'complete',
       stageName: 'Response ready',
@@ -216,7 +247,7 @@ async function* processStream(
     await delay(100);
 
     // Stage 5: Page Generation
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'page',
       status: 'active',
       stageName: 'Generating personalized page...',
@@ -246,7 +277,7 @@ async function* processStream(
           intentConfidence: intentAnalysis.confidence,
         };
 
-        yield createEvent('page', {
+        sendEvent('page', {
           page: generatedPage.page,
         });
       }
@@ -254,7 +285,7 @@ async function* processStream(
       console.error('Page gen error:', error);
     }
 
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'page',
       status: 'complete',
       stageName: 'Page ready',
@@ -273,7 +304,7 @@ async function* processStream(
     await updatePersona(updatedPersona);
 
     // Complete event
-    yield createEvent('complete', {
+    sendEvent('complete', {
       success: true,
       message: aiResponse,
       session: {
@@ -286,7 +317,7 @@ async function* processStream(
       generatedPage,
     });
 
-    yield createEvent('stage', {
+    sendEvent('stage', {
       stageId: 'complete',
       status: 'complete',
       stageName: 'Complete',
@@ -296,9 +327,13 @@ async function* processStream(
     console.log('[Stream] Processing complete');
   } catch (error) {
     console.error('[Stream] Fatal error:', error);
-    yield createEvent('error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    controller.enqueue(
+      encoder.encode(
+        createEvent('error', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
+      )
+    );
   }
 }
 
