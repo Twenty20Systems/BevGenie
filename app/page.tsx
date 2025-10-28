@@ -12,9 +12,83 @@ import { PageWithChatSidebar } from "@/components/page-with-chat-sidebar"
 import { useChat } from "@/hooks/useChat"
 import type { BevGeniePage } from "@/lib/ai/page-specs"
 
+// Default demo page - shows when user opens chat
+const DEFAULT_DEMO_PAGE: BevGeniePage = {
+  type: 'solution_brief',
+  title: 'Welcome to BevGenie',
+  description: 'AI-powered solutions for your beverage business - Ask any question to get started',
+  sections: [
+    {
+      type: 'hero',
+      headline: 'Welcome to BevGenie AI Assistant',
+      subheadline: 'Ask any question about your beverage business and watch the page update in real-time',
+      ctas: [
+        { text: 'Try a Question', url: '#' },
+        { text: 'Learn More', url: '#' }
+      ]
+    },
+    {
+      type: 'feature_grid',
+      title: 'How BevGenie Can Help',
+      features: [
+        {
+          title: 'Get Instant Insights',
+          description: 'Ask questions about your business challenges and get AI-powered solutions',
+          icon: 'lightbulb'
+        },
+        {
+          title: 'Real-Time Pages',
+          description: 'Watch as this page updates based on your questions and context',
+          icon: 'zap'
+        },
+        {
+          title: 'Smart Recommendations',
+          description: 'Receive personalized recommendations tailored to your role and company',
+          icon: 'target'
+        },
+        {
+          title: 'Continuous Learning',
+          description: 'The AI learns from your questions to provide better insights over time',
+          icon: 'brain'
+        }
+      ]
+    },
+    {
+      type: 'metrics',
+      title: 'Why Choose BevGenie?',
+      metrics: [
+        {
+          value: '1000+',
+          label: 'Beverage Companies',
+          description: 'Already using BevGenie'
+        },
+        {
+          value: '24/7',
+          label: 'AI Support',
+          description: 'Available anytime, anywhere'
+        },
+        {
+          value: '95%',
+          label: 'Satisfaction',
+          description: 'Customer satisfaction rating'
+        }
+      ]
+    },
+    {
+      type: 'cta',
+      title: 'Start Your Conversation Now',
+      description: 'Use the chat sidebar to ask questions and get personalized solutions',
+      buttons: [
+        { text: 'Ask Your First Question', url: '#' },
+        { text: 'View Documentation', url: '#' }
+      ]
+    }
+  ]
+};
+
 export default function HomePage() {
+  const [showPageWithChat, setShowPageWithChat] = useState(false);
   const [currentPage, setCurrentPage] = useState<BevGeniePage | null>(null);
-  const [chatStarted, setChatStarted] = useState(false);
   const { messages, generationStatus, sendMessage, clearMessages } = useChat();
 
   // Listen for page generation from chat
@@ -28,23 +102,16 @@ export default function HomePage() {
     }
   }, [messages]);
 
-  // Track when chat started
-  useEffect(() => {
-    if (messages.length > 0) {
-      setChatStarted(true);
-    }
-  }, [messages]);
-
-  // If chat has started, show page with sidebar
-  if (chatStarted) {
+  // If page+chat is open, show it
+  if (showPageWithChat) {
     return (
       <PageWithChatSidebar
-        page={currentPage}
+        page={currentPage || DEFAULT_DEMO_PAGE}
         messages={messages}
         isLoading={generationStatus.isGeneratingPage}
         generationStatus={generationStatus}
         onClose={() => {
-          setChatStarted(false);
+          setShowPageWithChat(false);
           clearMessages();
           setCurrentPage(null);
         }}
@@ -66,7 +133,12 @@ export default function HomePage() {
       <DataPowered />
       <Solutions />
       <Footer />
-      <ChatWidget onPageGenerated={(page) => setCurrentPage(page)} />
+      <ChatWidget
+        onPageGenerated={() => {
+          setShowPageWithChat(true);
+          setCurrentPage(DEFAULT_DEMO_PAGE);
+        }}
+      />
     </main>
   )
 }

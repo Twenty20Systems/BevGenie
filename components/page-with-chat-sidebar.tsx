@@ -88,13 +88,14 @@ export function PageWithChatSidebar({
             </div>
           </div>
 
-          {/* Close Button */}
+          {/* Back to Home Button */}
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-2"
             title="Return to home"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
+            <span className="text-sm font-medium">Back to Home</span>
           </button>
         </div>
 
