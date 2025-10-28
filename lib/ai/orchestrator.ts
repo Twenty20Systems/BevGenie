@@ -160,8 +160,8 @@ export async function processChat(request: ChatRequest): Promise<ChatResponse> {
   // Step 8: Determine generation mode
   const generationMode = determineGenerationMode(updatedPersona, conversationHistory.length);
 
-  // Step 9: Attempt dynamic page generation for every message
-  // Always try to generate pages - let intent analysis determine appropriateness
+  // Step 9: ALWAYS attempt dynamic page generation for every message
+  // Generate pages for every question - this is the core Phase 3 feature
   let generatedPage: ChatResponse['generatedPage'];
   try {
     const intentAnalysis = classifyMessageIntent(
@@ -170,33 +170,46 @@ export async function processChat(request: ChatRequest): Promise<ChatResponse> {
       updatedPersona
     );
 
-    // Generate page for any substantive inquiry (not just general_question)
-    const isSubstantiveInquiry = intentAnalysis.intent !== 'general_question' &&
-                                   intentAnalysis.confidence > 0.25;
+    // ALWAYS generate a page - determine best page type from intent
+    let pageType = intentAnalysis.suggestedPageType;
 
-    if (isSubstantiveInquiry && intentAnalysis.suggestedPageType) {
-      // Get knowledge context for page generation
-      const pageKnowledgeContext = knowledgeContext ?
-        knowledgeContext.split('\n').filter((line) => line.trim().length > 0) :
-        [];
-
-      // Generate the page specification
-      const pageGenResult = await generatePageSpec({
-        userMessage: message,
-        pageType: intentAnalysis.suggestedPageType as any,
-        persona: updatedPersona,
-        knowledgeContext: pageKnowledgeContext,
-        conversationHistory: conversationHistory.slice(-3), // Last 3 messages for context
-        personaDescription: getPersonaDescription(updatedPersona),
-      });
-
-      if (pageGenResult.success && pageGenResult.page) {
-        generatedPage = {
-          page: pageGenResult.page,
-          intent: intentAnalysis.intent,
-          intentConfidence: intentAnalysis.confidence,
-        };
+    // If no specific page type detected, use default based on persona
+    if (!pageType) {
+      if (updatedPersona.sales_focus_score > 0.5) {
+        pageType = 'solution_brief';
+      } else if (updatedPersona.marketing_focus_score > 0.5) {
+        pageType = 'feature_showcase';
+      } else {
+        pageType = 'solution_brief'; // Default
       }
+    }
+
+    // Get knowledge context for page generation
+    const pageKnowledgeContext = knowledgeContext ?
+      knowledgeContext.split('\n').filter((line) => line.trim().length > 0) :
+      [];
+
+    console.log(`[Page Generation] Intent: ${intentAnalysis.intent}, Type: ${pageType}, Confidence: ${intentAnalysis.confidence}`);
+
+    // Generate the page specification - always attempt this
+    const pageGenResult = await generatePageSpec({
+      userMessage: message,
+      pageType: pageType as any,
+      persona: updatedPersona,
+      knowledgeContext: pageKnowledgeContext,
+      conversationHistory: conversationHistory.slice(-3), // Last 3 messages for context
+      personaDescription: getPersonaDescription(updatedPersona),
+    });
+
+    if (pageGenResult.success && pageGenResult.page) {
+      console.log(`[Page Generation] SUCCESS - Page generated in ${pageGenResult.generationTime}ms`);
+      generatedPage = {
+        page: pageGenResult.page,
+        intent: intentAnalysis.intent,
+        intentConfidence: intentAnalysis.confidence,
+      };
+    } else {
+      console.log(`[Page Generation] FAILED - ${pageGenResult.error}`);
     }
   } catch (error) {
     console.error('Error generating dynamic page:', error);

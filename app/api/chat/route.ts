@@ -91,6 +91,11 @@ export async function POST(request: NextRequest) {
     // Update persona in session
     await updatePersona(chatResponse.personaUpdated);
 
+    console.log(`[Chat API] Generated page: ${!!chatResponse.generatedPage}`);
+    if (chatResponse.generatedPage) {
+      console.log(`[Chat API] Page type: ${chatResponse.generatedPage.intent}, Confidence: ${chatResponse.generatedPage.intentConfidence}`);
+    }
+
     // Return response
     const response: any = {
       success: true,
@@ -105,9 +110,12 @@ export async function POST(request: NextRequest) {
       knowledgeDocuments: chatResponse.knowledgeUsed,
     };
 
-    // Include generated page if one was created
+    // Include generated page if one was created - ALWAYS try to include
     if (chatResponse.generatedPage) {
+      console.log(`[Chat API] Including page in response`);
       response.generatedPage = chatResponse.generatedPage;
+    } else {
+      console.log(`[Chat API] No page to include - page generation may have failed`);
     }
 
     return NextResponse.json(response);
