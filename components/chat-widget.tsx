@@ -6,13 +6,17 @@ import { SendIcon, Loader2, MessageCircle, X, RotateCcw } from 'lucide-react';
 import { DynamicPageRenderer } from './dynamic-page-renderer';
 import { PageLoadingScreen, type LoaderStyle } from './page-loading-screen';
 
+interface ChatWidgetProps {
+  onPageGenerated?: (page: any) => void;
+}
+
 /**
  * Chat Widget Component - Improved Design
  *
  * Floating chat widget for collecting customer personas
  * and providing AI-powered responses
  */
-export function ChatWidget() {
+export function ChatWidget({ onPageGenerated }: ChatWidgetProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [loaderStyle, setLoaderStyle] = useState<LoaderStyle>('neural-network');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -36,6 +40,16 @@ export function ChatWidget() {
     const randomStyle = styles[Math.floor(Math.random() * styles.length)];
     setLoaderStyle(randomStyle);
   }, [generationStatus.isGeneratingPage]);
+
+  // Trigger callback when a page is generated
+  useEffect(() => {
+    if (messages.length > 0 && onPageGenerated) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant' && lastMessage.generatedPage) {
+        onPageGenerated(lastMessage.generatedPage.page);
+      }
+    }
+  }, [messages, onPageGenerated]);
 
   // Auto-scroll to bottom
   useEffect(() => {
