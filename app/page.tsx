@@ -4,6 +4,7 @@ import { Challenges } from "@/components/challenges"
 import { DataPowered } from "@/components/data-powered"
 import { Solutions } from "@/components/solutions"
 import { Footer } from "@/components/footer"
+import { ChatWidget } from "@/components/chat-widget"
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <DataPowered />
       <Solutions />
       <Footer />
+      <ChatWidget />
     </main>
   )
 }
