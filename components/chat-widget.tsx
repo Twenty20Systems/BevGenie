@@ -77,33 +77,27 @@ export function ChatWidget({ onPageGenerated }: ChatWidgetProps = {}) {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
-      {/* Page Loading Screen with Real-Time Stages */}
+      {/* Real-Time Progress Widget with Actual Streaming Progress */}
       {generationStatus.isGeneratingPage && (
-        <div className="fixed bottom-24 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 z-40">
+        <div className="fixed bottom-24 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 z-40 animate-fade-in">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm text-gray-900">Generating page...</h3>
             <span className="text-xs font-semibold text-blue-600">{generationStatus.progress}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-3 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 via-blue-600 to-cyan-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${generationStatus.progress}%` }}
             ></div>
           </div>
           {generationStatus.stageName && (
-            <p className="text-xs text-gray-600">{generationStatus.stageName}</p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <p className="text-xs text-gray-600">{generationStatus.stageName}</p>
+            </div>
           )}
         </div>
       )}
-
-      {/* Page Loading Screen */}
-      <PageLoadingScreen
-        isVisible={generationStatus.isGeneratingPage}
-        style={loaderStyle}
-        onComplete={() => {
-          // Loading complete - page will render below
-        }}
-      />
 
       {/* Chat Window */}
       {isOpen && (

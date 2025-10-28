@@ -170,43 +170,53 @@ export function useThinkingStream() {
 
           buffer += decoder.decode(value, { stream: true });
 
-          // Parse SSE messages
-          const lines = buffer.split('\n');
-          buffer = lines[lines.length - 1]; // Keep incomplete line in buffer
+          // Parse SSE messages - split by double newlines (empty line separates events)
+          const events = buffer.split('\n\n');
 
-          for (let i = 0; i < lines.length - 1; i++) {
-            const line = lines[i];
+          // Keep the last incomplete event in buffer
+          buffer = events[events.length - 1];
 
-            if (line.startsWith('event:')) {
-              const eventType = line.substring(6).trim();
-              const dataLine = lines[++i];
+          // Process all complete events
+          for (let i = 0; i < events.length - 1; i++) {
+            const eventBlock = events[i].trim();
+            if (!eventBlock) continue;
 
-              if (dataLine?.startsWith('data:')) {
-                const dataStr = dataLine.substring(5).trim();
+            const lines = eventBlock.split('\n');
+            let eventType = '';
+            let dataStr = '';
 
-                try {
-                  const data = JSON.parse(dataStr);
+            for (const line of lines) {
+              if (line.startsWith('event:')) {
+                eventType = line.substring(6).trim();
+              } else if (line.startsWith('data:')) {
+                dataStr = line.substring(5).trim();
+              }
+            }
 
-                  if (eventType === 'stage') {
-                    const stage = data as StreamStage;
-                    dispatch({ type: 'STAGE', payload: stage });
-                    onStage?.(stage);
-                  } else if (eventType === 'page') {
-                    const pageEvent = data as StreamPageEvent;
-                    dispatch({ type: 'PAGE', payload: pageEvent });
-                    onPage?.(pageEvent.page);
-                  } else if (eventType === 'complete') {
-                    const complete = data as StreamCompleteEvent;
-                    dispatch({ type: 'COMPLETE', payload: complete });
-                    completeResponse = complete;
-                    onComplete?.(complete);
-                  } else if (eventType === 'error') {
-                    const error = data as { error: string };
-                    dispatch({ type: 'ERROR', payload: error.error });
-                  }
-                } catch (e) {
-                  console.error('Failed to parse SSE data:', dataStr, e);
+            if (eventType && dataStr) {
+              try {
+                const data = JSON.parse(dataStr);
+                console.log(`[SSE] Received ${eventType}:`, data);
+
+                if (eventType === 'stage') {
+                  const stage = data as StreamStage;
+                  dispatch({ type: 'STAGE', payload: stage });
+                  onStage?.(stage);
+                } else if (eventType === 'page') {
+                  const pageEvent = data as StreamPageEvent;
+                  dispatch({ type: 'PAGE', payload: pageEvent });
+                  onPage?.(pageEvent.page);
+                } else if (eventType === 'complete') {
+                  const complete = data as StreamCompleteEvent;
+                  dispatch({ type: 'COMPLETE', payload: complete });
+                  completeResponse = complete;
+                  onComplete?.(complete);
+                } else if (eventType === 'error') {
+                  const error = data as { error: string };
+                  dispatch({ type: 'ERROR', payload: error.error });
                 }
+              } catch (e) {
+                console.error('Failed to parse SSE data:', dataStr, e);
               }
             }
           }

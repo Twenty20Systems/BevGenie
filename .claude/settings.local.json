@@ -18,7 +18,8 @@
       "mcp__supabase__get_project",
       "Bash(git add:*)",
       "Read(//d/ClaudeProjects/dynamic_website/**)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

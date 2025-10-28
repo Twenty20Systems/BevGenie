@@ -54,6 +54,7 @@ interface StageEvent {
 
 function sendSSEEvent(controller: ReadableStreamDefaultController<Uint8Array>, eventType: string, data: any) {
   const message = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  console.log(`[SSE Send] ${eventType}:`, data);
   controller.enqueue(new TextEncoder().encode(message));
 }
 
@@ -100,6 +101,17 @@ export async function POST(request: NextRequest) {
           let aiResponse = '';
           let generatedPage: any = null;
 
+          // Send initial event immediately so client knows stream started
+          sendSSEEvent(controller, 'stage', {
+            stageId: 'init',
+            status: 'active',
+            stageName: 'Initializing...',
+            progress: 5,
+          } as StageEvent);
+
+          // Small delay to ensure first event is sent
+          await new Promise(resolve => setTimeout(resolve, 100));
+
           // Stage 1: Analyze Intent
           sendSSEEvent(controller, 'stage', {
             stageId: 'intent',
@@ -122,6 +134,9 @@ export async function POST(request: NextRequest) {
             stageName: 'Question analyzed',
             progress: 20,
           } as StageEvent);
+
+          // Small delay to ensure events are processed
+          await new Promise(resolve => setTimeout(resolve, 50));
 
           // Stage 2: Detect Signals & Update Persona
           sendSSEEvent(controller, 'stage', {
@@ -158,6 +173,8 @@ export async function POST(request: NextRequest) {
             progress: 40,
           } as StageEvent);
 
+          await new Promise(resolve => setTimeout(resolve, 50));
+
           // Stage 3: Search Knowledge Base
           sendSSEEvent(controller, 'stage', {
             stageId: 'knowledge',
@@ -174,6 +191,8 @@ export async function POST(request: NextRequest) {
             stageName: 'Context gathered',
             progress: 60,
           } as StageEvent);
+
+          await new Promise(resolve => setTimeout(resolve, 50));
 
           // Stage 4: Generate Chat Response
           sendSSEEvent(controller, 'stage', {
@@ -233,6 +252,8 @@ export async function POST(request: NextRequest) {
             stageName: 'Response ready',
             progress: 80,
           } as StageEvent);
+
+          await new Promise(resolve => setTimeout(resolve, 50));
 
           // Stage 5: Generate Dynamic Page
           sendSSEEvent(controller, 'stage', {
