@@ -280,9 +280,11 @@ async function processStreamWithController(
         sendEvent('page', {
           page: generatedPage.page,
         });
+      } else {
+        console.warn('[Stream] Page generation failed:', pageGenResult.error, 'Retries:', pageGenResult.retryCount);
       }
     } catch (error) {
-      console.error('Page gen error:', error);
+      console.error('[Stream] Page gen error:', error);
     }
 
     sendEvent('stage', {
