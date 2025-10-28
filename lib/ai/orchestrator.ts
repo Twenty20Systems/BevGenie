@@ -20,6 +20,9 @@ import { detectPersonaSignals, updatePersonaWithSignals, getPrimaryPersonaClass 
 import { searchKnowledgeBase, getContextForLLM, getPainPointDocuments } from './knowledge-search';
 import { getPersonalizedSystemPrompt, formatKnowledgeContext, PAIN_POINT_PROMPTS } from './prompts/system';
 import { recordPersonaSignal, updatePersona, addConversationMessage } from '@/lib/session/session';
+import { classifyMessageIntent } from './intent-classification';
+import { generatePageSpec } from './page-generator';
+import type { BevGeniePage } from './page-specs';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -38,6 +41,11 @@ export interface ChatResponse {
   signalsDetected: string[];
   knowledgeUsed: number;
   generationMode: 'fresh' | 'returning' | 'data_connected';
+  generatedPage?: {
+    page: BevGeniePage;
+    intent: string;
+    intentConfidence: number;
+  };
 }
 
 /**
@@ -152,12 +160,51 @@ export async function processChat(request: ChatRequest): Promise<ChatResponse> {
   // Step 8: Determine generation mode
   const generationMode = determineGenerationMode(updatedPersona, conversationHistory.length);
 
+  // Step 9: Attempt dynamic page generation if intent warrants it
+  let generatedPage: ChatResponse['generatedPage'];
+  try {
+    const intentAnalysis = classifyMessageIntent(
+      message,
+      conversationHistory.length,
+      updatedPersona
+    );
+
+    if (intentAnalysis.shouldGeneratePage && intentAnalysis.suggestedPageType) {
+      // Get knowledge context for page generation
+      const pageKnowledgeContext = knowledgeContext ?
+        knowledgeContext.split('\n').filter((line) => line.trim().length > 0) :
+        [];
+
+      // Generate the page specification
+      const pageGenResult = await generatePageSpec({
+        userMessage: message,
+        pageType: intentAnalysis.suggestedPageType as any,
+        persona: updatedPersona,
+        knowledgeContext: pageKnowledgeContext,
+        conversationHistory: conversationHistory.slice(-3), // Last 3 messages for context
+        personaDescription: getPersonaDescription(updatedPersona),
+      });
+
+      if (pageGenResult.success && pageGenResult.page) {
+        generatedPage = {
+          page: pageGenResult.page,
+          intent: intentAnalysis.intent,
+          intentConfidence: intentAnalysis.confidence,
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error generating dynamic page:', error);
+    // Gracefully degrade - page generation failure doesn't stop chat
+  }
+
   return {
     message: aiResponse,
     personaUpdated: updatedPersona,
     signalsDetected: signalDescriptions,
     knowledgeUsed: knowledgeContext ? knowledgeContext.split('\n').length : 0,
     generationMode,
+    generatedPage,
   };
 }
 
@@ -323,6 +370,65 @@ export function getAIUsageStats(): {
       'Context-aware responses',
       'Pain point identification',
       'Brochure generation',
+      'Dynamic page generation',
     ],
   };
+}
+
+/**
+ * Generate human-readable persona description for page generation context
+ *
+ * Creates a natural language description of the detected persona
+ * to help the page generator tailor content appropriately
+ *
+ * @param persona - Detected persona scores
+ * @returns Formatted persona description
+ */
+function getPersonaDescription(persona: PersonaScores): string {
+  const descriptions: string[] = [];
+
+  // Company type
+  if (persona.supplier_score > 0.6) {
+    descriptions.push('as a beverage producer/supplier');
+  }
+  if (persona.distributor_score > 0.6) {
+    descriptions.push('as a distributor');
+  }
+
+  // Company size
+  if (persona.craft_score > 0.6) {
+    descriptions.push('in the craft beverage segment');
+  }
+  if (persona.mid_sized_score > 0.6) {
+    descriptions.push('as a mid-sized company');
+  }
+  if (persona.large_score > 0.6) {
+    descriptions.push('as an enterprise');
+  }
+
+  // Focus area
+  if (persona.sales_focus_score > 0.6) {
+    descriptions.push('with a focus on sales effectiveness');
+  }
+  if (persona.marketing_focus_score > 0.6) {
+    descriptions.push('prioritizing marketing and brand positioning');
+  }
+  if (persona.operations_focus_score > 0.6) {
+    descriptions.push('focused on operational efficiency');
+  }
+  if (persona.compliance_focus_score > 0.6) {
+    descriptions.push('concerned with compliance and regulations');
+  }
+
+  // Pain points
+  let painPointText = '';
+  if (persona.pain_points_detected.length > 0) {
+    painPointText = `Their key challenges include ${persona.pain_points_detected.slice(0, 2).join(' and ')}.`;
+  }
+
+  const personaText = descriptions.length > 0 ?
+    `The user is ${descriptions.join(', ')}.` :
+    'The user is a beverage industry professional.';
+
+  return `${personaText} ${painPointText}`;
 }

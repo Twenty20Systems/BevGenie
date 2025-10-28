@@ -17,7 +17,8 @@
       "mcp__supabase__get_anon_key",
       "mcp__supabase__get_project",
       "Bash(git add:*)",
-      "Read(//d/ClaudeProjects/dynamic_website/**)"
+      "Read(//d/ClaudeProjects/dynamic_website/**)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

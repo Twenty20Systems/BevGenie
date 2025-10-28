@@ -9,11 +9,18 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+export interface DynamicPageData {
+  page: any;
+  intent: string;
+  intentConfidence: number;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  generatedPage?: DynamicPageData;
 }
 
 export interface PersonaData {
@@ -106,6 +113,7 @@ export function useChat() {
           role: 'assistant',
           content: data.message,
           timestamp: new Date(),
+          generatedPage: data.generatedPage,
         };
 
         setState((prev) => ({

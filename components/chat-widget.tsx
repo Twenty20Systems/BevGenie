@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { SendIcon, Loader2, MessageCircle, X, RotateCcw } from 'lucide-react';
+import { DynamicPageRenderer } from './dynamic-page-renderer';
 
 /**
  * Chat Widget Component - Improved Design
@@ -93,19 +94,29 @@ export function ChatWidget() {
             ) : (
               <>
                 {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-                  >
+                  <div key={message.id} className="animate-fade-in">
                     <div
-                      className={`max-w-xs px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed transition-all ${
-                        message.role === 'user'
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md hover:shadow-lg'
-                          : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'
-                      }`}
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-3`}
                     >
-                      {message.content}
+                      <div
+                        className={`max-w-xs px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed transition-all ${
+                          message.role === 'user'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md hover:shadow-lg'
+                            : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'
+                        }`}
+                      >
+                        {message.content}
+                      </div>
                     </div>
+
+                    {/* Render dynamic page if generated */}
+                    {message.generatedPage && message.role === 'assistant' && (
+                      <div className="flex justify-start mb-4 animate-fade-in">
+                        <div className="w-full max-w-md bg-white border border-blue-200 rounded-lg overflow-hidden shadow-lg">
+                          <DynamicPageRenderer page={message.generatedPage.page} compact={true} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
 

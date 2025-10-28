@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     await updatePersona(chatResponse.personaUpdated);
 
     // Return response
-    return NextResponse.json({
+    const response: any = {
       success: true,
       message: chatResponse.message,
       session: {
@@ -103,7 +103,14 @@ export async function POST(request: NextRequest) {
       signals: chatResponse.signalsDetected,
       generationMode: chatResponse.generationMode,
       knowledgeDocuments: chatResponse.knowledgeUsed,
-    });
+    };
+
+    // Include generated page if one was created
+    if (chatResponse.generatedPage) {
+      response.generatedPage = chatResponse.generatedPage;
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error in chat API:', error);
 
