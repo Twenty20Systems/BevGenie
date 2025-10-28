@@ -8,14 +8,14 @@ import { DataPowered } from "@/components/data-powered"
 import { Solutions } from "@/components/solutions"
 import { Footer } from "@/components/footer"
 import { ChatWidget } from "@/components/chat-widget"
-import { FullScreenPageView } from "@/components/full-screen-page-view"
+import { PageWithChatSidebar } from "@/components/page-with-chat-sidebar"
 import { useChat } from "@/hooks/useChat"
 import type { BevGeniePage } from "@/lib/ai/page-specs"
 
 export default function HomePage() {
   const [currentPage, setCurrentPage] = useState<BevGeniePage | null>(null);
-  const [isGeneratingPage, setIsGeneratingPage] = useState(false);
-  const { messages, generationStatus } = useChat();
+  const [chatStarted, setChatStarted] = useState(false);
+  const { messages, generationStatus, sendMessage, clearMessages } = useChat();
 
   // Listen for page generation from chat
   useEffect(() => {
@@ -24,27 +24,35 @@ export default function HomePage() {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === 'assistant' && lastMessage.generatedPage) {
         setCurrentPage(lastMessage.generatedPage.page);
-        setIsGeneratingPage(false);
       }
     }
   }, [messages]);
 
-  // Track when page is being generated
+  // Track when chat started
   useEffect(() => {
-    setIsGeneratingPage(generationStatus.isGeneratingPage);
-  }, [generationStatus.isGeneratingPage]);
+    if (messages.length > 0) {
+      setChatStarted(true);
+    }
+  }, [messages]);
 
-  // If a page is currently displayed, show full-screen view
-  if (currentPage) {
+  // If chat has started, show page with sidebar
+  if (chatStarted) {
     return (
-      <FullScreenPageView
+      <PageWithChatSidebar
         page={currentPage}
-        isLoading={isGeneratingPage}
-        onClose={() => setCurrentPage(null)}
-        onOpenChat={() => {
-          // Chat can be toggled from within the full-screen view
+        messages={messages}
+        isLoading={generationStatus.isGeneratingPage}
+        generationStatus={generationStatus}
+        onClose={() => {
+          setChatStarted(false);
+          clearMessages();
+          setCurrentPage(null);
         }}
-        chatMessages={messages.length}
+        onSendMessage={sendMessage}
+        onClearChat={() => {
+          clearMessages();
+          setCurrentPage(null);
+        }}
       />
     );
   }
