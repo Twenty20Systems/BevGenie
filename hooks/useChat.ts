@@ -3,11 +3,13 @@
  *
  * Manages chat state and API communication
  * Handles message sending, response parsing, and session management
+ * Now uses SSE streaming for real-time page generation
  */
 
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useThinkingStream, type StreamStage, type StreamCompleteEvent } from './useThinkingStream';
 
 export interface DynamicPageData {
   page: any;
@@ -73,6 +75,7 @@ export function useChat() {
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { stream } = useThinkingStream();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -80,7 +83,7 @@ export function useChat() {
   }, [state.messages]);
 
   /**
-   * Send a message to the chat API
+   * Send a message using SSE streaming
    */
   const sendMessage = useCallback(
     async (content: string) => {
@@ -102,64 +105,71 @@ export function useChat() {
         isLoading: true,
         error: null,
         generationStatus: {
-          isGeneratingPage: false,
+          isGeneratingPage: true,
           stage: 0,
-          progress: 0,
+          stageName: 'Analyzing your question...',
+          progress: 10,
         },
       }));
 
       try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        let generatedPage: DynamicPageData | undefined;
+
+        const result = await stream(
+          content.trim(),
+          // onStage callback
+          (stage: StreamStage) => {
+            setState((prev) => ({
+              ...prev,
+              generationStatus: {
+                isGeneratingPage: true,
+                stage: 0,
+                stageName: stage.stageName,
+                progress: stage.progress,
+              },
+            }));
           },
-          body: JSON.stringify({
-            message: content.trim(),
-          }),
-        });
+          // onPage callback
+          (page: any) => {
+            generatedPage = {
+              page,
+              intent: '',
+              intentConfidence: 0,
+            };
+          },
+          // onComplete callback
+          (response: StreamCompleteEvent) => {
+            if (response.generatedPage) {
+              generatedPage = response.generatedPage;
+            }
+          }
+        );
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to send message');
+        if (!result) {
+          throw new Error('Stream failed');
         }
 
-        const data = await response.json();
-
-        // If page is being generated, show loading state
-        if (data.generatedPage) {
-          setState((prev) => ({
-            ...prev,
-            generationStatus: {
-              isGeneratingPage: true,
-              stage: 0,
-              stageName: 'Understanding Query',
-              progress: 0,
-            },
-          }));
-        }
-
-        // Add assistant message to state
+        // Add assistant message with all stream data
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: data.message,
+          content: result.message,
           timestamp: new Date(),
-          generatedPage: data.generatedPage,
+          generatedPage,
         };
 
         setState((prev) => ({
           ...prev,
           messages: [...prev.messages, assistantMessage],
           isLoading: false,
-          sessionId: data.session?.sessionId || prev.sessionId,
-          persona: data.session?.persona || prev.persona,
-          generationMode: data.generationMode || 'fresh',
+          sessionId: result.session?.sessionId || prev.sessionId,
+          persona: result.session?.persona || prev.persona,
+          generationMode: result.generationMode || 'fresh',
           generationStatus: {
-            isGeneratingPage: !!data.generatedPage,
+            isGeneratingPage: !!generatedPage,
             stage: 0,
-            stageName: data.generatedPage ? 'Understanding Query' : undefined,
-            progress: 0,
+            stageName: undefined,
+            progress: 100,
           },
         }));
       } catch (error) {
@@ -169,6 +179,11 @@ export function useChat() {
           ...prev,
           isLoading: false,
           error: errorMessage,
+          generationStatus: {
+            isGeneratingPage: false,
+            stage: 0,
+            progress: 0,
+          },
         }));
 
         // Add error message to chat
@@ -185,7 +200,7 @@ export function useChat() {
         }));
       }
     },
-    []
+    [stream]
   );
 
   /**
