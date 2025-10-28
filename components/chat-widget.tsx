@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { SendIcon, Loader2, MessageCircle, X, RotateCcw } from 'lucide-react';
 import { DynamicPageRenderer } from './dynamic-page-renderer';
+import { PageLoadingScreen, type LoaderStyle } from './page-loading-screen';
 
 /**
  * Chat Widget Component - Improved Design
@@ -13,6 +14,7 @@ import { DynamicPageRenderer } from './dynamic-page-renderer';
  */
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [loaderStyle, setLoaderStyle] = useState<LoaderStyle>('neural-network');
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const {
@@ -23,9 +25,17 @@ export function ChatWidget() {
     sendMessage,
     clearMessages,
     getPersonaInfo,
+    generationStatus,
   } = useChat();
 
   const personaInfo = getPersonaInfo();
+
+  // Rotate loader style for variety
+  useEffect(() => {
+    const styles: LoaderStyle[] = ['neural-network', 'chemical-reaction', 'holographic'];
+    const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+    setLoaderStyle(randomStyle);
+  }, [generationStatus.isGeneratingPage]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -53,6 +63,15 @@ export function ChatWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
+      {/* Page Loading Screen */}
+      <PageLoadingScreen
+        isVisible={generationStatus.isGeneratingPage}
+        style={loaderStyle}
+        onComplete={() => {
+          // Loading complete - page will render below
+        }}
+      />
+
       {/* Chat Window */}
       {isOpen && (
         <div className="mb-4 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">

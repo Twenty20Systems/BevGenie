@@ -39,6 +39,13 @@ export interface PersonaData {
   total_interactions: number;
 }
 
+export interface GenerationStatus {
+  isGeneratingPage: boolean;
+  stage: number;
+  stageName?: string;
+  progress: number; // 0-100
+}
+
 export interface ChatState {
   messages: Message[];
   isLoading: boolean;
@@ -46,6 +53,7 @@ export interface ChatState {
   sessionId: string | null;
   persona: PersonaData | null;
   generationMode: 'fresh' | 'returning' | 'data_connected';
+  generationStatus: GenerationStatus;
 }
 
 export function useChat() {
@@ -56,6 +64,12 @@ export function useChat() {
     sessionId: null,
     persona: null,
     generationMode: 'fresh',
+    generationStatus: {
+      isGeneratingPage: false,
+      stage: 0,
+      stageName: undefined,
+      progress: 0,
+    },
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -87,6 +101,11 @@ export function useChat() {
         messages: [...prev.messages, userMessage],
         isLoading: true,
         error: null,
+        generationStatus: {
+          isGeneratingPage: false,
+          stage: 0,
+          progress: 0,
+        },
       }));
 
       try {
@@ -107,6 +126,19 @@ export function useChat() {
 
         const data = await response.json();
 
+        // If page is being generated, show loading state
+        if (data.generatedPage) {
+          setState((prev) => ({
+            ...prev,
+            generationStatus: {
+              isGeneratingPage: true,
+              stage: 0,
+              stageName: 'Understanding Query',
+              progress: 0,
+            },
+          }));
+        }
+
         // Add assistant message to state
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -123,6 +155,12 @@ export function useChat() {
           sessionId: data.session?.sessionId || prev.sessionId,
           persona: data.session?.persona || prev.persona,
           generationMode: data.generationMode || 'fresh',
+          generationStatus: {
+            isGeneratingPage: !!data.generatedPage,
+            stage: 0,
+            stageName: data.generatedPage ? 'Understanding Query' : undefined,
+            progress: 0,
+          },
         }));
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

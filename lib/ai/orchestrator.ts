@@ -160,7 +160,8 @@ export async function processChat(request: ChatRequest): Promise<ChatResponse> {
   // Step 8: Determine generation mode
   const generationMode = determineGenerationMode(updatedPersona, conversationHistory.length);
 
-  // Step 9: Attempt dynamic page generation if intent warrants it
+  // Step 9: Attempt dynamic page generation for every message
+  // Always try to generate pages - let intent analysis determine appropriateness
   let generatedPage: ChatResponse['generatedPage'];
   try {
     const intentAnalysis = classifyMessageIntent(
@@ -169,7 +170,11 @@ export async function processChat(request: ChatRequest): Promise<ChatResponse> {
       updatedPersona
     );
 
-    if (intentAnalysis.shouldGeneratePage && intentAnalysis.suggestedPageType) {
+    // Generate page for any substantive inquiry (not just general_question)
+    const isSubstantiveInquiry = intentAnalysis.intent !== 'general_question' &&
+                                   intentAnalysis.confidence > 0.25;
+
+    if (isSubstantiveInquiry && intentAnalysis.suggestedPageType) {
       // Get knowledge context for page generation
       const pageKnowledgeContext = knowledgeContext ?
         knowledgeContext.split('\n').filter((line) => line.trim().length > 0) :
