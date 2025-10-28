@@ -1,16 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { useChat } from '@/hooks/useChat';
 import { SendIcon, Loader2, MessageCircle, X, RotateCcw } from 'lucide-react';
 
 /**
- * Chat Widget Component
+ * Chat Widget Component - Improved Design
  *
  * Floating chat widget for collecting customer personas
  * and providing AI-powered responses
@@ -18,188 +13,225 @@ import { SendIcon, Loader2, MessageCircle, X, RotateCcw } from 'lucide-react';
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const {
     messages,
     isLoading,
     error,
     persona,
-    generationMode,
     sendMessage,
     clearMessages,
     getPersonaInfo,
-    messagesEndRef,
   } = useChat();
 
   const personaInfo = getPersonaInfo();
 
+  // Auto-scroll to bottom
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages, isLoading]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const message = inputRef.current?.value.trim();
-    if (message) {
+    if (message && !isLoading) {
       sendMessage(message);
-      inputRef.current!.value = '';
-      inputRef.current?.focus();
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
     }
   };
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      inputRef.current?.focus();
+    if (isOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen]);
 
   return (
-    <>
-      {/* Chat Widget Container */}
-      <div className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${isOpen ? 'h-[600px] w-[400px]' : 'h-14 w-14'}`}>
-        <Card
-          className={`flex flex-col h-full bg-white shadow-2xl transition-all ${
-            isOpen ? 'rounded-lg' : 'rounded-full'
-          }`}
-        >
+    <div className="fixed bottom-6 right-6 z-50 font-sans">
+      {/* Chat Window */}
+      {isOpen && (
+        <div className="mb-4 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              <span className="font-semibold text-sm">BevGenie Chat</span>
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white p-5 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <MessageCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">BevGenie AI</h3>
+                <p className="text-xs text-blue-100">Always here to help</p>
+              </div>
             </div>
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="hover:bg-blue-800 p-1 rounded transition-colors"
+              onClick={() => setIsOpen(false)}
+              className="hover:bg-blue-700 hover:bg-opacity-50 p-2 rounded-full transition-all duration-200"
+              title="Close chat"
             >
-              {isOpen ? <X className="w-5 h-5" /> : null}
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          {isOpen && (
-            <>
-              {/* Messages Area */}
-              <ScrollArea className="flex-1 p-4 border-b">
-                {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-                    <MessageCircle className="w-12 h-12 text-gray-300 mb-2" />
-                    <p className="text-sm">
-                      👋 Hi! I'm BevGenie AI. Ask me how I can help your beverage business.
-                    </p>
+          {/* Messages Area */}
+          <div
+            ref={messagesContainerRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white"
+          >
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 py-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center mb-4">
+                  <MessageCircle className="w-8 h-8 text-blue-500" />
+                </div>
+                <p className="text-sm font-medium text-gray-700">Welcome to BevGenie!</p>
+                <p className="text-xs text-gray-500 mt-2 px-2">
+                  Tell me about your beverage business and I'll help identify your needs.
+                </p>
+              </div>
+            ) : (
+              <>
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                  >
+                    <div
+                      className={`max-w-xs px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed transition-all ${
+                        message.role === 'user'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-none shadow-md hover:shadow-lg'
+                          : 'bg-gray-100 text-gray-900 rounded-bl-none shadow-sm'
+                      }`}
+                    >
+                      {message.content}
+                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${
-                          message.role === 'user' ? 'justify-end' : 'justify-start'
-                        }`}
-                      >
-                        <div
-                          className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                            message.role === 'user'
-                              ? 'bg-blue-500 text-white rounded-br-none'
-                              : 'bg-gray-100 text-gray-900 rounded-bl-none'
-                          }`}
-                        >
-                          {message.content}
-                        </div>
-                      </div>
-                    ))}
-                    {isLoading && (
-                      <div className="flex items-center gap-2 text-gray-500 text-sm">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Thinking...</span>
-                      </div>
-                    )}
-                    <div ref={messagesEndRef} />
+                ))}
+
+                {isLoading && (
+                  <div className="flex items-center gap-3 text-gray-600 py-2">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                    </div>
+                    <span className="text-sm">BevGenie is thinking...</span>
                   </div>
                 )}
-              </ScrollArea>
+              </>
+            )}
+          </div>
 
-              {/* Persona Info */}
-              {personaInfo && (
-                <div className="px-4 py-2 bg-blue-50 border-b text-xs">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">Detected:</span>
-                      <Badge variant="outline" className="text-xs">
-                        {personaInfo.userType}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {personaInfo.confidence}% confident
-                      </Badge>
-                    </div>
-                    {personaInfo.topPainPoints.length > 0 && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">Pain points:</span>
-                        {personaInfo.topPainPoints.map((point) => (
-                          <Badge key={point} variant="secondary" className="text-xs">
-                            {point}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+          {/* Persona Detection */}
+          {personaInfo && messages.length > 0 && (
+            <div className="px-4 py-3 bg-blue-50 border-t border-blue-100">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-700">Detected:</span>
+                <span className="inline-block px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs rounded-full font-semibold">
+                  {personaInfo.userType}
+                </span>
+                <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-semibold">
+                  {personaInfo.confidence}% confident
+                </span>
+              </div>
+              {personaInfo.topPainPoints.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="text-xs font-bold text-gray-700">Pain Points:</span>
+                  {personaInfo.topPainPoints.map((point) => (
+                    <span
+                      key={point}
+                      className="inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-lg font-medium"
+                    >
+                      {point}
+                    </span>
+                  ))}
                 </div>
               )}
-
-              {/* Error Message */}
-              {error && (
-                <div className="px-4 py-2 bg-red-50 border-b text-xs text-red-600">
-                  {error}
-                </div>
-              )}
-
-              {/* Input Area */}
-              <form onSubmit={handleSubmit} className="p-3 border-t">
-                <div className="flex gap-2">
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    placeholder="Ask me anything..."
-                    disabled={isLoading}
-                    className="text-sm"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <SendIcon className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </form>
-
-              {/* Footer Actions */}
-              {messages.length > 0 && (
-                <div className="px-3 py-2 flex gap-2 border-t bg-gray-50">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={clearMessages}
-                    className="text-xs w-full"
-                  >
-                    <RotateCcw className="w-3 h-3 mr-1" />
-                    Clear
-                  </Button>
-                </div>
-              )}
-            </>
+            </div>
           )}
 
-          {/* Toggle Button (when closed) */}
-          {!isOpen && (
-            <button
-              onClick={() => setIsOpen(true)}
-              className="w-full h-full flex items-center justify-center hover:bg-blue-100 transition-colors rounded-full"
-            >
-              <MessageCircle className="w-6 h-6 text-blue-600" />
-            </button>
+          {/* Error Message */}
+          {error && (
+            <div className="px-4 py-3 bg-red-50 border-t border-red-100">
+              <p className="text-xs text-red-700 font-medium">⚠️ {error}</p>
+            </div>
           )}
-        </Card>
-      </div>
-    </>
+
+          {/* Input Area */}
+          <form onSubmit={handleSubmit} className="p-4 border-t bg-white flex-shrink-0">
+            <div className="flex gap-3">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Ask me anything..."
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 rounded-full border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
+              />
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-11 h-11 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white flex items-center justify-center hover:shadow-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex-shrink-0"
+                title="Send message"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <SendIcon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Footer Actions */}
+          {messages.length > 0 && (
+            <div className="px-4 py-2 bg-gray-50 border-t flex justify-center flex-shrink-0">
+              <button
+                onClick={clearMessages}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-all"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Clear Chat
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Floating Toggle Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl transition-all duration-300 transform ${
+          isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
+        } ${
+          messages.length > 0
+            ? 'bg-gradient-to-r from-green-500 to-green-600 animate-pulse'
+            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+        }`}
+        title="Open BevGenie chat"
+      >
+        <MessageCircle className="w-8 h-8 text-white" />
+        {messages.length > 0 && (
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+            {messages.length}
+          </div>
+        )}
+      </button>
+
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
+    </div>
   );
 }
