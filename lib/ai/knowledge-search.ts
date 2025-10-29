@@ -21,6 +21,26 @@ export interface SearchResult {
 }
 
 /**
+ * Get full knowledge base search results as document objects
+ * Used for page generation to get actual KB documents
+ *
+ * @param query - Search query
+ * @param personaTags - Optional: filter by persona tags
+ * @param painPointTags - Optional: filter by pain point tags
+ * @param limit - Number of results to return
+ * @returns Array of KB documents with metadata
+ */
+export async function getKnowledgeDocuments(
+  query: string,
+  personaTags?: string[],
+  painPointTags?: PainPointType[],
+  limit: number = 5
+): Promise<SearchResult[]> {
+  // Use vector search to get most relevant documents
+  return vectorSearchKnowledgeBase(query, personaTags, limit);
+}
+
+/**
  * Search knowledge base with hybrid approach (vector + text)
  *
  * For marketing website persona detection:

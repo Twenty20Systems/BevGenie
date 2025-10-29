@@ -25,11 +25,22 @@ import { PersonaScores } from '@/lib/session/types';
 
 const client = new Anthropic();
 
+export interface KBDocument {
+  id: string;
+  content: string;
+  source_type?: string;
+  source_url?: string;
+  persona_tags?: string[];
+  pain_point_tags?: string[];
+  similarity_score?: number;
+}
+
 export interface PageGenerationRequest {
   userMessage: string;
   pageType: PageType;
   persona?: PersonaScores;
   knowledgeContext?: string[];
+  knowledgeDocuments?: KBDocument[];
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
   personaDescription?: string;
 }
