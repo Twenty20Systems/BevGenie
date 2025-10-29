@@ -29,112 +29,76 @@ export default function GeniePage() {
     setLoadingProgress(0);
 
     try {
-      // Simulate API call with progress updates
-      // In production, this would call your actual API endpoints
+      // Call the real API endpoint with SSE streaming
+      const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: query }),
+      });
 
-      // Step 1: Analyze Query (25% progress)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setLoadingProgress(25);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
 
-      // Step 2: Generate UI (50% progress)
-      await new Promise(resolve => setTimeout(resolve, 2200));
-      setLoadingProgress(50);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let generatedPage: BevGeniePage | null = null;
 
-      // Step 3: Research & Intelligence (75% progress)
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      setLoadingProgress(75);
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-      // Step 4: Personalization (90% progress)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setLoadingProgress(90);
+          const text = decoder.decode(value);
+          const lines = text.split('\n');
 
-      // Step 5: Finalize (100% progress)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setLoadingProgress(100);
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              try {
+                const event = JSON.parse(data);
 
-      // Create sample page specification (in production, this comes from API)
-      const samplePage: BevGeniePage = {
-        type: 'solution_brief',
-        title: `Response to: ${query}`,
-        description: `AI-generated analysis and recommendations based on your query`,
-        sections: [
-          {
-            type: 'hero',
-            headline: query,
-            subheadline: 'Your AI-powered analysis is ready. Review the insights below.',
-            ctas: [
-              { text: 'Export Report', url: '#' },
-              { text: 'Ask Follow-up', url: '#' }
-            ]
-          },
-          {
-            type: 'feature_grid',
-            title: 'Key Insights',
-            features: [
-              {
-                title: 'Market Opportunity',
-                description: 'Based on your query and industry data, we identified significant opportunities',
-                icon: 'target'
-              },
-              {
-                title: 'Competitive Analysis',
-                description: 'Comparison with industry benchmarks shows strong positioning',
-                icon: 'zap'
-              },
-              {
-                title: 'Action Items',
-                description: 'Prioritized recommendations to maximize ROI and market share',
-                icon: 'checkmark'
-              },
-              {
-                title: 'Timeline',
-                description: 'Realistic implementation timeline for quick wins',
-                icon: 'calendar'
+                // Handle stage progress updates
+                if (event.stageId) {
+                  const stageProgress: Record<string, number> = {
+                    'init': 5,
+                    'intent': 15,
+                    'signals': 35,
+                    'knowledge': 55,
+                    'response': 75,
+                    'page': 90,
+                    'complete': 100,
+                  };
+                  setLoadingProgress(stageProgress[event.stageId] || 0);
+                }
+
+                // Handle generated page
+                if (event.page) {
+                  generatedPage = event.page;
+                }
+              } catch (e) {
+                // Skip non-JSON lines
               }
-            ]
-          },
-          {
-            type: 'metrics',
-            title: 'Performance Metrics',
-            metrics: [
-              {
-                value: '42%',
-                label: 'Potential Growth',
-                description: 'Based on implemented recommendations'
-              },
-              {
-                value: '3-6mo',
-                label: 'ROI Timeline',
-                description: 'Expected time to positive ROI'
-              },
-              {
-                value: '120%',
-                label: 'Efficiency Gain',
-                description: 'Improvement in operational efficiency'
-              }
-            ]
-          },
-          {
-            type: 'cta',
-            title: 'Ready to Take Action?',
-            description: 'Start implementing these recommendations today to see immediate results',
-            buttons: [
-              { text: 'Create Implementation Plan', url: '#' },
-              { text: 'Schedule Consultation', url: '#' }
-            ]
+            }
           }
-        ]
-      };
+        }
+      }
 
-      // Show result after brief delay
-      setTimeout(() => {
-        setGeneratedContent(samplePage);
-        setIsGenerating(false);
-      }, 500);
+      // Set the final generated page
+      if (generatedPage) {
+        setGeneratedContent(generatedPage);
+      } else {
+        throw new Error('No page generated');
+      }
 
+      setIsGenerating(false);
     } catch (error) {
       console.error('Generation failed:', error);
       setIsGenerating(false);
+      // Show error to user
+      alert('Failed to generate response. Please try again.');
     }
   };
 
