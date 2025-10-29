@@ -32,6 +32,11 @@ yarn-error.log*
 # Local env files
 .env*.local
 
+# Secure files - NEVER commit to git
+ADMIN_KEY_SECURE.txt
+*.key
+secrets/
+
 # Editor directories and files
 .vscode/
 .idea/
