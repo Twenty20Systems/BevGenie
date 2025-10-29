@@ -168,39 +168,63 @@ function buildSystemPrompt(
       ? `\n\nNote: This is retry attempt ${retryCount}. Please pay careful attention to the schema requirements and ensure all fields are present and valid.`
       : '';
 
-  return `You are an expert marketing page generator for BevGenie, a beverage industry software platform.
+  return `You are an expert B2B SaaS marketing page generator specializing in the beverage industry. You create professional, detailed, and personalized pages for BevGenie - a beverage industry intelligence platform.
 
-Your task is to generate a ${request.pageType} page specification that will be rendered as a React component.
+Your task is to generate a professional ${request.pageType} page specification that will be rendered as a full-featured React website component.
 
 Page Type: ${request.pageType}
 ${template}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY valid JSON that matches the BevGeniePage schema
-2. Do NOT include markdown formatting, code blocks, or explanations
-3. Ensure all required fields are present
+2. Do NOT include markdown formatting, code blocks, or explanations - output JSON only
+3. Ensure all required fields are present and complete
 4. Follow the character limits specified in validation rules
-5. Use realistic, specific content relevant to the beverage industry
-6. Include concrete metrics and proof points when applicable
-7. Make CTAs action-oriented and clear${retryNote}
+5. Create DETAILED, SPECIFIC, and PROFESSIONAL content for the beverage industry
+6. Include concrete metrics, data points, and industry-specific insights from the knowledge base
+7. Make headlines compelling and subheadlines supporting - not redundant
+8. Create action-oriented CTAs with clear business value
+9. Structure content to flow logically from problem → insight → solution → action
+10. Use professional B2B SaaS language appropriate for C-suite executives and department heads
+
+CONTENT GUIDELINES:
+- Beverage Industry Focus: Reference specific categories (spirits, beer, wine, non-alcoholic), market segments, and distributor challenges
+- Use Real Metrics: Cite specific percentage improvements, market growth rates, efficiency gains
+- Address Pain Points: Directly solve the user's business challenges with concrete solutions
+- Show ROI: Include expected financial benefits, efficiency improvements, time savings
+- Use Specific Examples: Reference real scenarios from the beverage industry
+
+SECTION COMPOSITION FOR EACH PAGE TYPE:
+- Solution Brief: Hero (problem-focused) → Features (benefits) → Metrics (proof) → Testimonial (trust) → CTA (action)
+- Feature Showcase: Hero (feature intro) → Feature Grid (detailed features) → Metrics (results) → FAQ (objections) → CTA
+- Case Study: Hero (results) → Metrics (proof) → Steps (process) → Testimonial (impact) → CTA
+- Comparison: Hero (positioning) → Comparison Table (analysis) → Steps (next steps) → FAQ (questions) → CTA
+- Implementation Roadmap: Hero (journey) → Steps (detailed timeline) → Feature Grid (capabilities) → Metrics (milestones) → CTA
+- ROI Calculator: Hero (value prop) → Metrics (starting assumptions) → Steps (calculation method) → Feature Grid (inputs) → CTA
 
 Schema Reference:
 - type: string (must be "${request.pageType}")
-- title: string (required, page title)
-- description: string (required, page description)
-- sections: array of section objects (required, at least 1)
+- title: string (required, compelling page title, 50-100 chars)
+- description: string (required, executive summary, 150-250 chars)
+- sections: array of section objects (required, minimum 4-5 sections)
 
-Each section has a type property:
-- "hero": Headline and CTAs for attention
-- "feature_grid": Grid of features (2-6 items)
-- "testimonial": Customer quote and info
-- "comparison_table": Feature comparison matrix
-- "cta": Call-to-action buttons
-- "faq": Frequently asked questions
-- "metrics": Key results and statistics
-- "steps": Implementation or process steps
+Each section has a type property with requirements:
+- "hero": headline (50-100 chars), subheadline (100-150 chars), ctaButton with text/action
+- "feature_grid": title, subtitle, columns (2-4), features array with icon/title/description
+- "testimonial": quote (100-200 chars), author, company, role, metric (optional), image URL (optional)
+- "comparison_table": title, headers array, rows with feature/values
+- "cta": title, description (optional), buttons array with text/action/primary boolean
+- "faq": title (optional), items array with question/answer pairs
+- "metrics": title (optional), metrics array with value/label/description
+- "steps": title (optional), steps array with number/title/description, timeline (optional)
 
-Respond with ONLY the JSON page specification, nothing else.`;
+STYLING HINTS (for developers):
+- Use the provided icons/emojis to enhance visual appeal
+- Ensure at least 4-5 meaningful sections
+- Mix text and visual content effectively
+- Make every section valuable and specific
+
+Respond with ONLY the JSON page specification, nothing else.${retryNote}`;
 }
 
 /**
@@ -210,26 +234,40 @@ Respond with ONLY the JSON page specification, nothing else.`;
 function buildUserPrompt(request: PageGenerationRequest): string {
   const contextParts: string[] = [];
 
-  // Add user message
-  contextParts.push(`User's message: "${request.userMessage}"`);
+  contextParts.push(`CONTEXT:`);
+  contextParts.push(`User's Question/Topic: "${request.userMessage}"`);
 
   // Add persona context if available
   if (request.personaDescription) {
-    contextParts.push(`\nUser Profile:\n${request.personaDescription}`);
+    contextParts.push(`\nUser Profile/Persona:${request.personaDescription}`);
   }
 
-  // Add knowledge context
+  // Add knowledge context with emphasis on beverage industry insights
   if (request.knowledgeContext && request.knowledgeContext.length > 0) {
-    contextParts.push(`\nRelevant Knowledge:\n${request.knowledgeContext.slice(0, 3).join('\n\n')}`);
+    contextParts.push(`\nRELEVANT INDUSTRY KNOWLEDGE (use these insights in your content):`);
+    request.knowledgeContext.slice(0, 5).forEach((context, idx) => {
+      contextParts.push(`\n[Industry Insight ${idx + 1}]:\n${context}`);
+    });
   }
 
   // Add conversation history for context
-  if (request.conversationHistory && request.conversationHistory.length > 0) {
-    const recentHistory = request.conversationHistory.slice(-2).map((m) => `${m.role}: ${m.content}`);
-    contextParts.push(`\nRecent Conversation:\n${recentHistory.join('\n')}`);
+  if (request.conversationHistory && request.conversationHistory.length > 2) {
+    contextParts.push(`\nCONVERSATION CONTEXT:`);
+    const recentHistory = request.conversationHistory
+      .slice(-3)
+      .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`);
+    contextParts.push(recentHistory.join('\n\n'));
   }
 
-  contextParts.push(`\nGenerate a ${request.pageType} page specification as valid JSON.`);
+  contextParts.push(`\n\nTASK:`);
+  contextParts.push(`Generate a professional and detailed ${request.pageType} page specification tailored to address the user's needs and business context.`);
+  contextParts.push(`\nIMPORTANT:`);
+  contextParts.push(`- Use the industry knowledge provided above to create specific, data-driven content`);
+  contextParts.push(`- Reference beverage industry metrics and challenges from the knowledge base`);
+  contextParts.push(`- Create 4-5 professional sections that flow logically`);
+  contextParts.push(`- Make content specific to their role and pain points`);
+  contextParts.push(`- Include concrete metrics and business value propositions`);
+  contextParts.push(`- Output ONLY valid JSON, no explanations or markdown`);
 
   return contextParts.join('\n');
 }

@@ -170,66 +170,80 @@ function SectionRenderer({ section, index }: { section: PageSection; index: numb
 
 /**
  * Hero Section Component
- * Large headline with optional CTA button
+ * Large headline with optional CTA button - Professional B2B SaaS styling
  */
 function HeroSection({ section }: { section: any }) {
   return (
     <div
-      className="hero-section p-12 rounded-lg shadow-lg"
+      className="hero-section py-16 px-12 rounded-xl"
       style={{
-        backgroundColor: COLORS.white,
+        backgroundColor: `linear-gradient(135deg, ${COLORS.navy}15, ${COLORS.cyan}10)`,
         border: `1px solid ${COLORS.mediumGray}`,
       }}
     >
-      <h2
-        className="text-4xl md:text-5xl font-bold mb-4"
-        style={{ color: COLORS.navy }}
-      >
-        {section.headline}
-      </h2>
-      {section.subheadline && (
-        <p
-          className="text-xl md:text-2xl mb-8"
-          style={{ color: COLORS.textGray }}
+      <div className="max-w-3xl">
+        <h2
+          className="text-5xl md:text-6xl font-bold mb-6 leading-tight"
+          style={{ color: COLORS.navy }}
         >
-          {section.subheadline}
-        </p>
-      )}
-      {section.ctaButton && (
-        <button
-          className="mt-6 px-8 py-3 font-bold rounded-lg transition-colors shadow-md text-white"
-          style={{ backgroundColor: COLORS.cyan }}
-        >
-          {section.ctaButton.text}
-        </button>
-      )}
+          {section.headline}
+        </h2>
+        {section.subheadline && (
+          <p
+            className="text-xl md:text-2xl mb-10 leading-relaxed font-medium"
+            style={{ color: COLORS.darkGray }}
+          >
+            {section.subheadline}
+          </p>
+        )}
+        {section.ctaButton && (
+          <div className="flex flex-wrap gap-4 mt-8">
+            <button
+              className="px-8 py-4 font-bold rounded-lg transition-all hover:shadow-lg transform hover:scale-105 text-white"
+              style={{ backgroundColor: COLORS.cyan }}
+            >
+              {section.ctaButton.text}
+            </button>
+            <button
+              className="px-8 py-4 font-bold rounded-lg transition-all hover:shadow-lg border-2"
+              style={{
+                borderColor: COLORS.navy,
+                color: COLORS.navy,
+                backgroundColor: COLORS.white,
+              }}
+            >
+              Learn More
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 /**
  * Feature Grid Section Component
- * Grid of features with icons and descriptions
+ * Grid of features with icons and descriptions - Professional B2B SaaS styling
  */
 function FeatureGridSection({ section }: { section: any }) {
   return (
     <div className="feature-grid-section">
       {section.title && (
         <h3
-          className="text-2xl font-bold mb-2"
+          className="text-4xl font-bold mb-3"
           style={{ color: COLORS.navy }}
         >
           {section.title}
         </h3>
       )}
       {section.subtitle && (
-        <p className="mb-8" style={{ color: COLORS.textGray }}>
+        <p className="mb-12 text-lg" style={{ color: COLORS.darkGray }}>
           {section.subtitle}
         </p>
       )}
 
       <div
-        className={`grid grid-cols-1 md:grid-cols-${section.columns} gap-6`}
+        className={`grid grid-cols-1 md:grid-cols-${section.columns} gap-8`}
         style={{
           gridTemplateColumns: `repeat(${Math.min(section.columns, 3)}, minmax(0, 1fr))`,
         }}
@@ -237,22 +251,29 @@ function FeatureGridSection({ section }: { section: any }) {
         {section.features.map((feature: any, idx: number) => (
           <div
             key={idx}
-            className="feature-card p-6 rounded-lg hover:shadow-lg transition-shadow"
+            className="feature-card p-8 rounded-xl hover:shadow-xl transition-all hover:border-cyan-300 hover:translate-y-[-4px] duration-300"
             style={{
               backgroundColor: COLORS.white,
-              border: `1px solid ${COLORS.mediumGray}`,
+              border: `2px solid ${COLORS.mediumGray}`,
             }}
           >
             {feature.icon && (
-              <div className="text-3xl mb-3">{feature.icon}</div>
+              <div
+                className="text-5xl mb-4 inline-flex items-center justify-center w-14 h-14 rounded-lg"
+                style={{
+                  backgroundColor: `${COLORS.cyan}15`,
+                }}
+              >
+                {feature.icon}
+              </div>
             )}
             <h4
-              className="text-lg font-semibold mb-2"
+              className="text-xl font-bold mb-3"
               style={{ color: COLORS.navy }}
             >
               {feature.title}
             </h4>
-            <p className="text-sm" style={{ color: COLORS.textGray }}>
+            <p className="text-base leading-relaxed" style={{ color: COLORS.textGray }}>
               {feature.description}
             </p>
           </div>
@@ -408,26 +429,28 @@ function ComparisonTableSection({ section }: { section: any }) {
 
 /**
  * CTA Section Component
- * Call-to-action buttons with various actions
+ * Call-to-action buttons with various actions - Professional B2B SaaS styling
  */
 function CTASection({ section }: { section: any }) {
   return (
     <div
-      className="cta-section p-12 rounded-lg shadow-lg text-center text-white"
-      style={{ backgroundColor: COLORS.navy }}
+      className="cta-section p-16 rounded-2xl shadow-2xl text-center text-white"
+      style={{
+        backgroundColor: `linear-gradient(135deg, ${COLORS.navy}, #003d7a)`,
+      }}
     >
-      <h3 className="text-3xl font-bold mb-3">{section.title}</h3>
+      <h3 className="text-4xl md:text-5xl font-bold mb-4">{section.title}</h3>
       {section.description && (
-        <p className="text-lg mb-8 max-w-2xl mx-auto" style={{ color: '#e0e0e0' }}>
+        <p className="text-lg mb-12 max-w-2xl mx-auto leading-relaxed" style={{ color: '#d1d5db' }}>
           {section.description}
         </p>
       )}
 
-      <div className="flex flex-wrap gap-4 justify-center mt-8">
+      <div className="flex flex-wrap gap-4 justify-center mt-10">
         {section.buttons.map((button: any, idx: number) => (
           <button
             key={idx}
-            className={`px-8 py-3 font-semibold rounded-lg transition-all ${
+            className={`px-8 py-4 font-bold rounded-lg transition-all hover:shadow-xl transform hover:scale-105 ${
               button.primary ? 'text-navy' : ''
             }`}
             style={{
@@ -512,44 +535,44 @@ function FAQSection({ section }: { section: any }) {
 
 /**
  * Metrics Section Component
- * Display key metrics and statistics
+ * Display key metrics and statistics - Professional B2B SaaS styling
  */
 function MetricsSection({ section }: { section: any }) {
   return (
     <div className="metrics-section">
       {section.title && (
         <h3
-          className="text-2xl font-bold mb-8"
+          className="text-4xl font-bold mb-12"
           style={{ color: COLORS.navy }}
         >
           {section.title}
         </h3>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {section.metrics.map((metric: any, idx: number) => (
           <div
             key={idx}
-            className="metric-card p-8 rounded-lg text-center"
+            className="metric-card p-10 rounded-xl text-center hover:shadow-xl transition-all hover:translate-y-[-4px] duration-300"
             style={{
               backgroundColor: COLORS.white,
-              border: `1px solid ${COLORS.mediumGray}`,
+              border: `2px solid ${COLORS.mediumGray}`,
             }}
           >
             <div
-              className="text-4xl font-bold mb-2"
+              className="text-6xl font-bold mb-4"
               style={{ color: COLORS.cyan }}
             >
               {metric.value}
             </div>
             <p
-              className="text-lg font-semibold mb-2"
+              className="text-xl font-bold mb-3"
               style={{ color: COLORS.navy }}
             >
               {metric.label}
             </p>
             {metric.description && (
-              <p className="text-sm" style={{ color: COLORS.textGray }}>
+              <p className="text-base leading-relaxed" style={{ color: COLORS.darkGray }}>
                 {metric.description}
               </p>
             )}
