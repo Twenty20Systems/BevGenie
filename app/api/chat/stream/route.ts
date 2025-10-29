@@ -11,7 +11,7 @@ import { NextRequest } from 'next/server';
 import { getSession, updatePersona, addConversationMessage as addConvMsg, getConversationHistory } from '@/lib/session/session';
 import { validateAIConfiguration } from '@/lib/ai/orchestrator';
 import { detectPersonaSignals, updatePersonaWithSignals } from '@/lib/ai/persona-detection';
-import { getContextForLLM } from '@/lib/ai/knowledge-search';
+import { getContextForLLM, getKnowledgeDocuments } from '@/lib/ai/knowledge-search';
 import { getPersonalizedSystemPrompt, PAIN_POINT_PROMPTS } from '@/lib/ai/prompts/system';
 import { recordPersonaSignal } from '@/lib/session/session';
 import { classifyMessageIntent } from '@/lib/ai/intent-classification';
@@ -184,6 +184,7 @@ async function processStreamWithController(
     });
 
     const knowledgeContext = await getContextForLLM(message, updatedPersona, 5);
+    const knowledgeDocuments = await getKnowledgeDocuments(message, undefined, undefined, 5);
 
     sendEvent('stage', {
       stageId: 'knowledge',
@@ -266,6 +267,7 @@ async function processStreamWithController(
         pageType: pageType as any,
         persona: updatedPersona,
         knowledgeContext: pageKnowledgeContext,
+        knowledgeDocuments: knowledgeDocuments,
         conversationHistory: messages.slice(-3),
         personaDescription: 'User profile',
       });

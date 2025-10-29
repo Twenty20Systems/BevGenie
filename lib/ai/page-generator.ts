@@ -200,10 +200,11 @@ CRITICAL REQUIREMENTS:
 
 CONTENT GUIDELINES:
 - Beverage Industry Focus: Reference specific categories (spirits, beer, wine, non-alcoholic), market segments, and distributor challenges
-- Use Real Metrics: Cite specific percentage improvements, market growth rates, efficiency gains
-- Address Pain Points: Directly solve the user's business challenges with concrete solutions
-- Show ROI: Include expected financial benefits, efficiency improvements, time savings
-- Use Specific Examples: Reference real scenarios from the beverage industry
+- Use Real Metrics: Cite specific percentage improvements, market growth rates, efficiency gains from the KB context
+- Address Pain Points: Directly solve the user's business challenges with concrete solutions using KB insights
+- Show ROI: Include expected financial benefits, efficiency improvements, time savings mentioned in KB
+- Use Specific Examples: Reference real scenarios from the beverage industry found in KB documents
+- PERSONALIZATION: Each query must generate different content based on the KB documents retrieved - NEVER generic
 
 SECTION COMPOSITION FOR EACH PAGE TYPE:
 - Solution Brief: Hero (problem-focused) → Features (benefits) → Metrics (proof) → Testimonial (trust) → CTA (action)
@@ -253,6 +254,25 @@ function buildUserPrompt(request: PageGenerationRequest): string {
     contextParts.push(`\nUser Profile/Persona:${request.personaDescription}`);
   }
 
+  // Add knowledge documents as internal context for LLM (not visible to end user)
+  if (request.knowledgeDocuments && request.knowledgeDocuments.length > 0) {
+    contextParts.push(`\n====== INTERNAL KNOWLEDGE BASE CONTEXT ======`);
+    contextParts.push(`These documents contain specific industry data, metrics, and solutions.`);
+    contextParts.push(`Use these to inform and personalize your page content.`);
+    contextParts.push(`Extract specific data points, metrics, and insights from these documents.`);
+    contextParts.push(`Make your content unique and different from generic responses.\n`);
+    request.knowledgeDocuments.forEach((doc, idx) => {
+      const relevancePercent = Math.round((doc.similarity_score || 0) * 100);
+      contextParts.push(`[DOCUMENT ${idx + 1}] Relevance: ${relevancePercent}%`);
+      if (doc.source_type) contextParts.push(`Source Type: ${doc.source_type}`);
+      contextParts.push(`\n${doc.content}\n`);
+    });
+    contextParts.push(`====== END KB CONTEXT ======\n`);
+    contextParts.push(`CRITICAL: Your page must reflect the specific data and insights from these KB documents.`);
+    contextParts.push(`This ensures unique, personalized content for each user query.`);
+    contextParts.push(`The end user will NOT see these documents or KB metadata in the final page.`);
+  }
+
   // Add knowledge context with emphasis on beverage industry insights
   if (request.knowledgeContext && request.knowledgeContext.length > 0) {
     contextParts.push(`\nRELEVANT INDUSTRY KNOWLEDGE (use these insights in your content):`);
@@ -271,8 +291,20 @@ function buildUserPrompt(request: PageGenerationRequest): string {
   }
 
   contextParts.push(`\n\nTASK:`);
-  contextParts.push(`Generate a professional and detailed ${request.pageType} page specification tailored to address the user's needs and business context.`);
-  contextParts.push(`\nIMPORTANT:`);
+  contextParts.push(`Generate a professional and detailed ${request.pageType} page specification.`);
+
+  if (request.knowledgeDocuments && request.knowledgeDocuments.length > 0) {
+    contextParts.push(`\n⚠️ CRITICAL REQUIREMENTS FOR KB-DRIVEN CONTENT:`);
+    contextParts.push(`1. Your page content MUST be based on the specific KB documents provided above`);
+    contextParts.push(`2. Extract and use specific metrics, data points, and insights from those documents`);
+    contextParts.push(`3. Each question gets DIFFERENT content based on its unique KB documents`);
+    contextParts.push(`4. Do NOT generate generic content - use the KB data to personalize`);
+    contextParts.push(`5. Create headlines, features, and metrics that reflect the KB insights`);
+    contextParts.push(`6. The user will NOT see KB documents or sources in the final page`);
+    contextParts.push(`7. Your job is to synthesize KB data into a professional page\n`);
+  }
+
+  contextParts.push(`\nCONTENT REQUIREMENTS:`);
   contextParts.push(`- Use the industry knowledge provided above to create specific, data-driven content`);
   contextParts.push(`- Reference beverage industry metrics and challenges from the knowledge base`);
   contextParts.push(`- Create 4-5 professional sections that flow logically`);
