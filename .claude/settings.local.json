@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git commit:*)",
+      "Read(//d/ClaudeProjects/ManagementSystem/**)",
+      "Bash(git remote add:*)",
+      "Bash(npx create-next-app:*)",
+      "mcp__supabase__apply_migration",
+      "Bash(npm install)"
     ],
     "deny": [],
     "ask": []
