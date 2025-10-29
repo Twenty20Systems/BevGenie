@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, MessageCircle, Send, RotateCcw, ChevronDown } from 'lucide-react';
 import { DynamicPageRenderer } from './dynamic-page-renderer';
+import { COLORS } from '@/lib/constants/colors';
 import type { BevGeniePage } from '@/lib/ai/page-specs';
 import type { DynamicPageData } from '@/hooks/useChat';
 
@@ -55,14 +56,8 @@ export function PageWithChatSidebar({
     }
   };
 
-  // Progress animation stages
-  const getProgressColor = (progress: number) => {
-    if (progress < 25) return 'from-blue-500 to-blue-600';
-    if (progress < 50) return 'from-blue-600 to-cyan-500';
-    if (progress < 75) return 'from-cyan-500 to-green-500';
-    if (progress < 100) return 'from-green-500 to-emerald-500';
-    return 'from-emerald-500 to-green-600';
-  };
+  // Progress animation stages - Using cyan from design system
+  const getProgressColor = () => COLORS.cyan;
 
   const getProgressIcon = (progress: number) => {
     if (progress < 25) return '🔄';
@@ -73,11 +68,17 @@ export function PageWithChatSidebar({
   };
 
   return (
-    <div className="fixed inset-0 flex bg-gray-50">
+    <div
+      className="fixed inset-0 flex"
+      style={{ backgroundColor: COLORS.white }}
+    >
       {/* Main Page Content - Full Width */}
       <div className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white px-8 py-5 flex items-center justify-between shadow-lg">
+        <div
+          className="sticky top-0 z-40 text-white px-8 py-5 flex items-center justify-between shadow-lg"
+          style={{ backgroundColor: COLORS.navy }}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-xl">
               🚀
@@ -101,7 +102,13 @@ export function PageWithChatSidebar({
 
         {/* Progress Bar - Prominent Display */}
         {isLoading && (
-          <div className="sticky top-16 z-39 bg-white border-b-2 border-gray-200 px-8 py-4 shadow-sm">
+          <div
+            className="sticky top-16 z-39 border-b-2 px-8 py-4 shadow-sm"
+            style={{
+              backgroundColor: COLORS.white,
+              borderColor: COLORS.mediumGray,
+            }}
+          >
             <div className="flex items-center gap-4">
               {/* Animated Icon */}
               <div className="text-3xl animate-bounce">{getProgressIcon(generationStatus.progress)}</div>
@@ -112,16 +119,25 @@ export function PageWithChatSidebar({
                   <p className="font-semibold text-gray-900 text-sm">
                     {generationStatus.stageName || 'Generating...'}
                   </p>
-                  <span className="font-bold text-blue-600 text-sm">{generationStatus.progress}%</span>
+                  <span
+                    className="font-bold text-sm"
+                    style={{ color: COLORS.cyan }}
+                  >
+                    {generationStatus.progress}%
+                  </span>
                 </div>
 
                 {/* Animated Progress Bar */}
-                <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="w-full h-3 rounded-full overflow-hidden"
+                  style={{ backgroundColor: COLORS.mediumGray }}
+                >
                   <div
-                    className={`h-full rounded-full bg-gradient-to-r ${getProgressColor(
-                      generationStatus.progress
-                    )} transition-all duration-300 shadow-lg`}
-                    style={{ width: `${generationStatus.progress}%` }}
+                    className="h-full rounded-full transition-all duration-300 shadow-lg"
+                    style={{
+                      width: `${generationStatus.progress}%`,
+                      backgroundColor: getProgressColor(),
+                    }}
                   >
                     {/* Shimmer effect */}
                     <div
@@ -156,12 +172,16 @@ export function PageWithChatSidebar({
 
       {/* Chat Sidebar */}
       <div
-        className={`fixed right-0 top-0 h-screen z-50 bg-white shadow-2xl transition-all duration-300 flex flex-col ${
+        className={`fixed right-0 top-0 h-screen z-50 shadow-2xl transition-all duration-300 flex flex-col ${
           chatExpanded ? 'w-96' : 'w-0 overflow-hidden'
         }`}
+        style={{ backgroundColor: COLORS.white }}
       >
         {/* Sidebar Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-4 flex items-center justify-between flex-shrink-0">
+        <div
+          className="text-white px-4 py-4 flex items-center justify-between flex-shrink-0"
+          style={{ backgroundColor: COLORS.navy }}
+        >
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5" />
             <h2 className="font-bold">Chat</h2>
@@ -184,7 +204,10 @@ export function PageWithChatSidebar({
               {/* User Message */}
               {msg.role === 'user' && (
                 <div className="flex justify-end">
-                  <div className="max-w-xs bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg rounded-tr-none shadow-sm">
+                  <div
+                    className="max-w-xs text-white px-4 py-2 rounded-lg rounded-tr-none shadow-sm"
+                    style={{ backgroundColor: COLORS.navy }}
+                  >
                     <p className="text-sm font-medium break-words">{msg.content}</p>
                   </div>
                 </div>
@@ -193,7 +216,13 @@ export function PageWithChatSidebar({
               {/* Assistant Message */}
               {msg.role === 'assistant' && (
                 <div className="flex justify-start">
-                  <div className="max-w-xs bg-gray-100 text-gray-900 px-4 py-2 rounded-lg rounded-tl-none shadow-sm">
+                  <div
+                    className="max-w-xs px-4 py-2 rounded-lg rounded-tl-none shadow-sm"
+                    style={{
+                      backgroundColor: COLORS.lightGray,
+                      color: COLORS.darkGray,
+                    }}
+                  >
                     <p className="text-sm break-words">{msg.content}</p>
                   </div>
                 </div>
@@ -218,7 +247,10 @@ export function PageWithChatSidebar({
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-200 p-4 flex-shrink-0">
+        <div
+          className="border-t p-4 flex-shrink-0"
+          style={{ borderColor: COLORS.mediumGray }}
+        >
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="flex gap-2">
               <input
@@ -227,12 +259,17 @@ export function PageWithChatSidebar({
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask something..."
                 disabled={isLoading}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 transition-all disabled:bg-gray-100"
+                style={{
+                  borderColor: COLORS.mediumGray,
+                  outlineColor: COLORS.cyan,
+                }}
               />
               <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}
-                className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="p-2 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                style={{ backgroundColor: COLORS.cyan }}
                 title="Send"
               >
                 <Send className="w-4 h-4" />
@@ -244,7 +281,11 @@ export function PageWithChatSidebar({
                 type="button"
                 onClick={onClearChat}
                 disabled={isLoading}
-                className="w-full px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                className="w-full px-3 py-2 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: COLORS.lightGray,
+                  color: COLORS.textGray,
+                }}
               >
                 <RotateCcw className="w-3 h-3 inline mr-1" />
                 Clear
@@ -258,7 +299,8 @@ export function PageWithChatSidebar({
       {!chatExpanded && (
         <button
           onClick={() => setChatExpanded(true)}
-          className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all hover:scale-110"
+          className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full text-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all hover:scale-110"
+          style={{ backgroundColor: COLORS.cyan }}
           title="Open chat"
         >
           <MessageCircle className="w-6 h-6" />
