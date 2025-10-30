@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     validateAIConfiguration();
 
     const body = await request.json();
-    const { message } = body;
+    const { message, context, interactionSource } = body;
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return new Response('Invalid message', { status: 400 });
@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
             session,
             conversationHistory,
             controller,
-            encoder
+            encoder,
+            context,
+            interactionSource
           );
           controller.close();
         } catch (error) {
@@ -92,7 +94,9 @@ async function processStreamWithController(
   session: any,
   conversationHistory: any[],
   controller: ReadableStreamDefaultController<Uint8Array>,
-  encoder: TextEncoder
+  encoder: TextEncoder,
+  pageContext?: any,
+  interactionSource?: string
 ): Promise<void> {
   let updatedPersona: PersonaScores = session.user.persona;
   let aiResponse = '';
@@ -270,6 +274,8 @@ async function processStreamWithController(
         knowledgeDocuments: knowledgeDocuments,
         conversationHistory: messages.slice(-3),
         personaDescription: 'User profile',
+        pageContext: pageContext,
+        interactionSource: interactionSource,
       });
 
       if (pageGenResult.success && pageGenResult.page) {

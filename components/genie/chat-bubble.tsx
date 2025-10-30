@@ -67,17 +67,15 @@ export function ChatBubble({ onSendMessage, isLoading, loadingProgress }: ChatBu
             </button>
           </div>
 
-          {/* Loading Progress Bar (When generating) */}
-          {isLoading && loadingProgress !== undefined && (
+          {/* Loading Progress Bar (When generating) - No percentage shown */}
+          {isLoading && (
             <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
               <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
                 <span>Generating page...</span>
-                <span className="font-bold text-[#00C8FF]">{loadingProgress}%</span>
               </div>
               <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#00C8FF] transition-all duration-300"
-                  style={{ width: `${loadingProgress}%` }}
+                  className="h-full bg-[#00C8FF] animate-pulse"
                 />
               </div>
             </div>

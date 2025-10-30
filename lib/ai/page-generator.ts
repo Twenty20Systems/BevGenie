@@ -43,6 +43,8 @@ export interface PageGenerationRequest {
   knowledgeDocuments?: KBDocument[];
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
   personaDescription?: string;
+  pageContext?: any; // Context from user interactions (button clicks, navigation)
+  interactionSource?: string; // Source of interaction (hero_cta_click, cta_click, learn_more, etc.)
 }
 
 export interface PageGenerationResponse {
@@ -248,6 +250,20 @@ function buildUserPrompt(request: PageGenerationRequest): string {
 
   contextParts.push(`CONTEXT:`);
   contextParts.push(`User's Question/Topic: "${request.userMessage}"`);
+
+  // Add page interaction context if available
+  if (request.pageContext) {
+    contextParts.push(`\nUser Interaction Context:`);
+    contextParts.push(`- Interaction Type: ${request.interactionSource || 'direct_question'}`);
+    if (request.pageContext.originalQuery) {
+      contextParts.push(`- Original Query: "${request.pageContext.originalQuery}"`);
+    }
+    if (request.pageContext.context) {
+      contextParts.push(`- User Clicked On: "${request.pageContext.context}"`);
+    }
+    contextParts.push(`\nNote: The user is refining their query by clicking on specific page elements.`);
+    contextParts.push(`Generate deeper, more specific content based on what they clicked on.`);
+  }
 
   // Add persona context if available
   if (request.personaDescription) {

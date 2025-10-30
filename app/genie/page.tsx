@@ -22,20 +22,26 @@ export default function GeniePage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [generatedContent, setGeneratedContent] = useState<BevGeniePage | null>(null);
   const [currentQuery, setCurrentQuery] = useState('');
+  const [interactionContext, setInteractionContext] = useState<any>(null);
 
-  const handleSendMessage = async (query: string) => {
+  const handleSendMessage = async (query: string, context?: any) => {
     setCurrentQuery(query);
     setIsGenerating(true);
     setLoadingProgress(0);
+    setInteractionContext(context);
 
     try {
       // Call the real API endpoint with SSE streaming
+      const requestBody = context
+        ? { message: query, context, interactionSource: context.source }
+        : { message: query };
+
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: query }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -102,6 +108,22 @@ export default function GeniePage() {
     }
   };
 
+  const handleBackToHome = () => {
+    setGeneratedContent(null);
+    setCurrentQuery('');
+    setInteractionContext(null);
+  };
+
+  const handleNavigationClick = (action: string, context?: any) => {
+    // Generate a new message based on the interaction
+    const interactionMessage = `${currentQuery} - User clicked on: ${context?.text || action}`;
+    handleSendMessage(interactionMessage, {
+      ...context,
+      source: action,
+      originalQuery: currentQuery,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Loading Screen (Full Screen Overlay) */}
@@ -116,7 +138,11 @@ export default function GeniePage() {
 
       {/* Generated Content */}
       {generatedContent && !isGenerating && (
-        <DynamicContent specification={generatedContent} />
+        <DynamicContent
+          specification={generatedContent}
+          onBackToHome={handleBackToHome}
+          onNavigationClick={handleNavigationClick}
+        />
       )}
 
       {/* Welcome Page (if no content generated yet) */}

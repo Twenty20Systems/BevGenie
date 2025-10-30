@@ -9,6 +9,7 @@ interface DynamicPageRendererProps {
   page: BevGeniePage;
   onDownload?: () => void;
   onShare?: () => void;
+  onNavigationClick?: (action: string, context?: any) => void;
   compact?: boolean; // For displaying in chat vs full page
 }
 
@@ -22,6 +23,7 @@ export function DynamicPageRenderer({
   page,
   onDownload,
   onShare,
+  onNavigationClick,
   compact = false,
 }: DynamicPageRendererProps) {
   return (
@@ -110,7 +112,12 @@ export function DynamicPageRenderer({
       {/* Render sections */}
       <div className={`page-content space-y-8 ${compact ? 'max-w-2xl' : ''}`}>
         {page.sections.map((section, index) => (
-          <SectionRenderer key={index} section={section} index={index} />
+          <SectionRenderer
+            key={index}
+            section={section}
+            index={index}
+            onNavigationClick={onNavigationClick}
+          />
         ))}
       </div>
 
@@ -141,24 +148,32 @@ export function DynamicPageRenderer({
  * Section Renderer
  * Routes to appropriate section component based on section type
  */
-function SectionRenderer({ section, index }: { section: PageSection; index: number }) {
+function SectionRenderer({
+  section,
+  index,
+  onNavigationClick,
+}: {
+  section: PageSection;
+  index: number;
+  onNavigationClick?: (action: string, context?: any) => void;
+}) {
   switch (section.type) {
     case 'hero':
-      return <HeroSection section={section} />;
+      return <HeroSection section={section} onNavigationClick={onNavigationClick} />;
     case 'feature_grid':
-      return <FeatureGridSection section={section} />;
+      return <FeatureGridSection section={section} onNavigationClick={onNavigationClick} />;
     case 'testimonial':
       return <TestimonialSection section={section} />;
     case 'comparison_table':
       return <ComparisonTableSection section={section} />;
     case 'cta':
-      return <CTASection section={section} />;
+      return <CTASection section={section} onNavigationClick={onNavigationClick} />;
     case 'faq':
       return <FAQSection section={section} />;
     case 'metrics':
       return <MetricsSection section={section} />;
     case 'steps':
-      return <StepsSection section={section} />;
+      return <StepsSection section={section} onNavigationClick={onNavigationClick} />;
     default:
       return (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
@@ -172,7 +187,30 @@ function SectionRenderer({ section, index }: { section: PageSection; index: numb
  * Hero Section Component
  * Large headline with optional CTA button - Professional B2B SaaS styling
  */
-function HeroSection({ section }: { section: any }) {
+function HeroSection({
+  section,
+  onNavigationClick,
+}: {
+  section: any;
+  onNavigationClick?: (action: string, context?: any) => void;
+}) {
+  const handleCtaClick = () => {
+    if (onNavigationClick) {
+      onNavigationClick(section.ctaButton?.action || 'hero_cta_click', {
+        text: section.ctaButton?.text,
+        context: section.headline,
+      });
+    }
+  };
+
+  const handleLearnMore = () => {
+    if (onNavigationClick) {
+      onNavigationClick('learn_more', {
+        context: section.headline,
+      });
+    }
+  };
+
   return (
     <div
       className="hero-section py-16 px-12 rounded-xl"
@@ -199,12 +237,14 @@ function HeroSection({ section }: { section: any }) {
         {section.ctaButton && (
           <div className="flex flex-wrap gap-4 mt-8">
             <button
+              onClick={handleCtaClick}
               className="px-8 py-4 font-bold rounded-lg transition-all hover:shadow-lg transform hover:scale-105 text-white"
               style={{ backgroundColor: COLORS.cyan }}
             >
               {section.ctaButton.text}
             </button>
             <button
+              onClick={handleLearnMore}
               className="px-8 py-4 font-bold rounded-lg transition-all hover:shadow-lg border-2"
               style={{
                 borderColor: COLORS.navy,
@@ -431,7 +471,23 @@ function ComparisonTableSection({ section }: { section: any }) {
  * CTA Section Component
  * Call-to-action buttons with various actions - Professional B2B SaaS styling
  */
-function CTASection({ section }: { section: any }) {
+function CTASection({
+  section,
+  onNavigationClick,
+}: {
+  section: any;
+  onNavigationClick?: (action: string, context?: any) => void;
+}) {
+  const handleButtonClick = (button: any) => {
+    if (onNavigationClick) {
+      onNavigationClick(button.action || 'cta_click', {
+        text: button.text,
+        context: section.title,
+        isPrimary: button.primary,
+      });
+    }
+  };
+
   return (
     <div
       className="cta-section p-16 rounded-2xl shadow-2xl text-center text-white"
@@ -450,6 +506,7 @@ function CTASection({ section }: { section: any }) {
         {section.buttons.map((button: any, idx: number) => (
           <button
             key={idx}
+            onClick={() => handleButtonClick(button)}
             className={`px-8 py-4 font-bold rounded-lg transition-all hover:shadow-xl transform hover:scale-105 ${
               button.primary ? 'text-navy' : ''
             }`}
