@@ -399,6 +399,12 @@ export function updateDetectionVectors(
   const updated = { ...currentVectors };
   const now = Date.now();
 
+  // Ensure all history arrays are initialized
+  if (!updated.functional_role_history) updated.functional_role_history = [];
+  if (!updated.org_type_history) updated.org_type_history = [];
+  if (!updated.org_size_history) updated.org_size_history = [];
+  if (!updated.product_focus_history) updated.product_focus_history = [];
+
   // Group signals by vector type
   const signalsByVector = signals.reduce(
     (acc, signal) => {
