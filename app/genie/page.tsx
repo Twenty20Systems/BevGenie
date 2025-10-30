@@ -71,20 +71,25 @@ export default function GeniePage() {
 
   /**
    * Handle user message - Generate BOTH text response AND UI page
+   * @param query - The user's question
+   * @param context - Optional context (if from navigation/button click)
+   * @param isNavigationClick - If true, don't add messages to chat (silent navigation)
    */
-  const handleSendMessage = async (query: string, context?: any) => {
+  const handleSendMessage = async (query: string, context?: any, isNavigationClick: boolean = false) => {
     setCurrentQuery(query);
     setIsGenerating(true);
     setLoadingProgress(0);
 
-    // Add user message to chat
-    const userMessageId = `msg-${Date.now()}`;
-    setChatMessages(prev => [...prev, {
-      id: userMessageId,
-      role: 'user',
-      content: query,
-      timestamp: Date.now()
-    }]);
+    // Add user message to chat ONLY if it's not from navigation
+    if (!isNavigationClick) {
+      const userMessageId = `msg-${Date.now()}`;
+      setChatMessages(prev => [...prev, {
+        id: userMessageId,
+        role: 'user',
+        content: query,
+        timestamp: Date.now()
+      }]);
+    }
 
     try {
       // Call the real API endpoint with SSE streaming
@@ -173,14 +178,16 @@ export default function GeniePage() {
         // Add page to history (APPEND, don't replace!)
         setPageHistory(prev => [...prev, newPage]);
 
-        // Add assistant text response to chat
-        setChatMessages(prev => [...prev, {
-          id: `msg-${Date.now()}`,
-          role: 'assistant',
-          content: textResponse || `I've generated a detailed page about "${query}". Scroll down to see it! ↓`,
-          timestamp: Date.now(),
-          pageId
-        }]);
+        // Add assistant text response to chat ONLY if it's not from navigation
+        if (!isNavigationClick && textResponse) {
+          setChatMessages(prev => [...prev, {
+            id: `msg-${Date.now()}`,
+            role: 'assistant',
+            content: textResponse,
+            timestamp: Date.now(),
+            pageId
+          }]);
+        }
 
         setIsGenerating(false);
 
@@ -191,25 +198,31 @@ export default function GeniePage() {
       } else {
         console.warn('[Genie] No page generated');
         setIsGenerating(false);
-        setChatMessages(prev => [...prev, {
-          id: `msg-${Date.now()}`,
-          role: 'assistant',
-          content: 'Unable to generate a page at this time. Please try rephrasing your question.',
-          timestamp: Date.now()
-        }]);
+
+        // Only show error in chat if not from navigation
+        if (!isNavigationClick) {
+          setChatMessages(prev => [...prev, {
+            id: `msg-${Date.now()}`,
+            role: 'assistant',
+            content: 'Unable to generate a page at this time. Please try rephrasing your question.',
+            timestamp: Date.now()
+          }]);
+        }
       }
     } catch (error) {
       console.error('[Genie] Generation failed:', error);
       setIsGenerating(false);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      // Add error message to chat
-      setChatMessages(prev => [...prev, {
-        id: `msg-${Date.now()}`,
-        role: 'assistant',
-        content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
-        timestamp: Date.now()
-      }]);
+      // Add error message to chat only if not from navigation
+      if (!isNavigationClick) {
+        setChatMessages(prev => [...prev, {
+          id: `msg-${Date.now()}`,
+          role: 'assistant',
+          content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+          timestamp: Date.now()
+        }]);
+      }
     }
   };
 
@@ -222,16 +235,18 @@ export default function GeniePage() {
 
   /**
    * Handle navigation click within a generated page
+   * These are silent - no chat messages added
    */
   const handleNavigationClick = (action: string, context?: any) => {
     // Generate a new message based on the interaction
     const interactionMessage = `${currentQuery} - User clicked on: ${context?.text || action}`;
+    // Pass true for isNavigationClick to keep it silent
     handleSendMessage(interactionMessage, {
       ...context,
       source: action,
       originalQuery: currentQuery,
       pageIndex: pageHistory.length
-    });
+    }, true);
   };
 
   return (
