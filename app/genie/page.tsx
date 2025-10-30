@@ -347,8 +347,6 @@ export default function GeniePage() {
                 specification={page.content}
                 onBackToHome={handleBackToHome}
                 onNavigationClick={handleNavigationClick}
-                pageNumber={index + 1}
-                totalPages={pageHistory.length}
               />
             </section>
           ))}
