@@ -270,6 +270,11 @@ async function processStreamWithController(
       aiResponse = 'Error generating response';
     }
 
+    // Send the text response to chat
+    sendEvent('text', {
+      text: aiResponse,
+    });
+
     sendEvent('stage', {
       stageId: 'response',
       status: 'complete',

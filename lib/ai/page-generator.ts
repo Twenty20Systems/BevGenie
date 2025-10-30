@@ -200,6 +200,36 @@ CRITICAL REQUIREMENTS:
 9. Structure content to flow logically from problem → insight → solution → action
 10. Use professional B2B SaaS language appropriate for C-suite executives and department heads
 
+DESIGN & VISUAL REQUIREMENTS:
+The generated pages will use BevGenie's professional component library with the following theme:
+- Primary Color: #00C8FF (electric cyan) - use for CTAs, highlights, and accents
+- Secondary Color: #0A1930 (deep navy) - use for headers and text
+- Background: #FFFFFF (white) with #F8F9FA (light gray) for alternating sections
+- Text: #0A1930 for headings, #666666 for body text
+
+Available Professional Components (that will be imported):
+- PageHeader: Gradient headers with title and description
+- MetricsGrid: Professional KPI display grids
+- KPICard: Individual metric cards with trends and change indicators
+- Card: Content section cards with consistent styling
+- Button: Primary/secondary buttons with hover effects
+- ActionCard: Interactive navigation cards with icons
+
+Animation Classes Available:
+- animate-fade-in: Smooth fade-in effect (0.5s)
+- animate-slide-up: Slide up from bottom with fade (0.6s)
+- animate-slide-in-left: Slide in from left (0.6s)
+- animate-slide-in-right: Slide in from right (0.6s)
+- animate-scale-in: Scale up with fade (0.4s)
+- animate-stagger-1, animate-stagger-2, animate-stagger-3: Staggered delays for sequential animations
+
+Hover Effects to Apply:
+- hover:scale-105 transition-transform: For interactive cards
+- hover:shadow-xl transition-shadow: For card depth
+- hover:bg-opacity-90 transition-colors: For buttons
+
+Your JSON output should structure sections that will render using these components with smooth animations
+
 CONTENT GUIDELINES:
 - Beverage Industry Focus: Reference specific categories (spirits, beer, wine, non-alcoholic), market segments, and distributor challenges
 - Use Real Metrics: Cite specific percentage improvements, market growth rates, efficiency gains from the KB context
@@ -232,11 +262,18 @@ Each section has a type property with requirements:
 - "metrics": title (optional), metrics array with value/label/description
 - "steps": title (optional), steps array with number/title/description, timeline (optional)
 
-STYLING HINTS (for developers):
-- Use the provided icons/emojis to enhance visual appeal
-- Ensure at least 4-5 meaningful sections
-- Mix text and visual content effectively
-- Make every section valuable and specific
+STYLING & ANIMATION HINTS:
+- Hero sections should have gradient backgrounds (from-[#0A1930] to-[#1A3A5A])
+- Apply animate-fade-in to top-level sections for smooth entrance
+- Use animate-slide-up for cards and content blocks that appear on scroll
+- Add animate-stagger-1, animate-stagger-2, animate-stagger-3 to sequential items in grids
+- Feature grids should have hover:scale-105 transition-transform on cards
+- Metrics should use KPICard styling with trend indicators (up/down arrows)
+- CTA buttons should be prominent with primary color (#00C8FF)
+- Ensure at least 4-5 meaningful sections with proper spacing
+- Alternate between white and light gray backgrounds for visual rhythm
+- Use icons/emojis strategically to enhance visual appeal
+- Make every section valuable and specific to the user's query
 
 Respond with ONLY the JSON page specification, nothing else.${retryNote}`;
 }
