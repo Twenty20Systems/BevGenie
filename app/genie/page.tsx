@@ -4,8 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { ChatBubble } from '@/components/genie/chat-bubble';
 import { BevGenieVisualLoader } from '@/components/genie/loading-screen';
 import { DynamicContent } from '@/components/genie/dynamic-content';
+import { PresentationBubble } from '@/components/genie/presentation-bubble';
 import type { BevGeniePage } from '@/lib/ai/page-specs';
 import { COLORS } from '@/lib/constants/colors';
+import { SessionTracker } from '@/lib/session/session-tracker';
+import type { PersonaScores } from '@/lib/session/types';
 
 /**
  * Page History Item
@@ -51,11 +54,59 @@ export default function GeniePage() {
   // Chat message history
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
+  // Session Tracker for presentation generation
+  const [sessionTracker, setSessionTracker] = useState<SessionTracker | null>(null);
+
   // Ref for scrolling to newly generated pages
   const lastPageRef = useRef<HTMLDivElement>(null);
 
   // Show landing page only when no pages generated yet
   const showLandingPage = pageHistory.length === 0 && !isGenerating;
+
+  // Initialize session tracker
+  useEffect(() => {
+    // Create a default persona for the tracker
+    const defaultPersona: PersonaScores = {
+      detection_vectors: {
+        functional_role: null,
+        functional_role_confidence: 0,
+        functional_role_history: [],
+        org_type: null,
+        org_type_confidence: 0,
+        org_type_history: [],
+        org_size: null,
+        org_size_confidence: 0,
+        org_size_history: [],
+        product_focus: null,
+        product_focus_confidence: 0,
+        product_focus_history: [],
+        vectors_updated_at: Date.now(),
+      },
+      supplier_score: 0,
+      distributor_score: 0,
+      craft_score: 0,
+      mid_sized_score: 0,
+      large_score: 0,
+      sales_focus_score: 0,
+      marketing_focus_score: 0,
+      operations_focus_score: 0,
+      compliance_focus_score: 0,
+      pain_points_detected: [],
+      pain_points_confidence: {
+        execution_blind_spot: 0,
+        market_assessment: 0,
+        sales_effectiveness: 0,
+        market_positioning: 0,
+        operational_challenge: 0,
+        regulatory_compliance: 0,
+      },
+      overall_confidence: 0,
+      total_interactions: 0,
+    };
+
+    const tracker = new SessionTracker(defaultPersona);
+    setSessionTracker(tracker);
+  }, []);
 
   /**
    * Scroll to the latest generated page
@@ -89,6 +140,16 @@ export default function GeniePage() {
         content: query,
         timestamp: Date.now()
       }]);
+
+      // Track this query for presentation generation
+      if (sessionTracker) {
+        sessionTracker.trackQuery(
+          query,
+          context?.source || 'chat',
+          'Generating solution...',
+          'BevGenie AI'
+        );
+      }
     }
 
     try {
@@ -187,6 +248,14 @@ export default function GeniePage() {
             timestamp: Date.now(),
             pageId
           }]);
+
+          // Update the tracker with the actual solution
+          if (sessionTracker) {
+            sessionTracker.updateLastQuery(
+              textResponse,
+              generatedPage?.type || 'BevGenie AI'
+            );
+          }
         }
 
         setIsGenerating(false);
@@ -453,6 +522,16 @@ export default function GeniePage() {
         messages={chatMessages}
         pageHistory={pageHistory}
       />
+
+      {/* Presentation Bubble - Generate personalized presentation */}
+      {sessionTracker && (
+        <PresentationBubble
+          tracker={sessionTracker}
+          onGenerate={() => {
+            console.log('[Genie] Generating presentation...');
+          }}
+        />
+      )}
     </div>
   );
 }
