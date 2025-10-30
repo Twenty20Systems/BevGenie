@@ -99,21 +99,6 @@ export interface StepsSection {
   timeline?: string; // e.g., "90 days"
 }
 
-export interface KBContentSection {
-  type: 'kb_content';
-  title?: string;
-  subtitle?: string;
-  documents: Array<{
-    id: string;
-    content: string;
-    source_type?: string;
-    source_url?: string;
-    persona_tags?: string[];
-    pain_point_tags?: string[];
-    similarity_score?: number;
-  }>;
-}
-
 /**
  * Union type for all possible sections
  */
@@ -125,8 +110,7 @@ export type PageSection =
   | CTASection
   | FAQSection
   | MetricsSection
-  | StepsSection
-  | KBContentSection;
+  | StepsSection;
 
 /**
  * Page type definitions
@@ -316,10 +300,6 @@ export const VALIDATION_RULES = {
     maxSteps: 10,
     title: { minLength: 5, maxLength: 50 },
     description: { minLength: 10, maxLength: 200 },
-  },
-  kb_content: {
-    minDocuments: 1,
-    maxDocuments: 5,
   },
 };
 
