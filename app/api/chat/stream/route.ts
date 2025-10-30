@@ -173,11 +173,11 @@ async function processStreamWithController(
 
     // ==================== NEW: Update 4-Vector Detection ====================
     // Detect and update the 4 key persona vectors based on message + interaction context
-    updatedPersona = detectAndUpdateVectors(message, updatedPersona, {
-      source: context?.source,
-      text: context?.text,
-      context: context?.context,
-    });
+    updatedPersona = detectAndUpdateVectors(message, updatedPersona, pageContext ? {
+      source: pageContext.source,
+      text: pageContext.text,
+      context: pageContext.context,
+    } : undefined);
 
     // Get current vector classification for logging/tracking
     const vectorClassification = getCurrentVectorClassification(updatedPersona.detection_vectors);
