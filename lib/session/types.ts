@@ -26,6 +26,39 @@ export interface PainPointDetails {
 }
 
 /**
+ * Persona Detection Vectors: 4 Key Dimensions
+ *
+ * Vector 1: Functional Role - User's primary business function
+ * Vector 2: Org Type - Supplier vs Retailer
+ * Vector 3: Org Size - Small (S), Medium (M), Large (L)
+ * Vector 4: Product Focus - Beer, Spirits, Wine
+ */
+export interface PersonaDetectionVectors {
+  // Vector 1: Functional Role (Sales, Marketing)
+  functional_role: 'sales' | 'marketing' | null;
+  functional_role_confidence: number; // 0.0 - 1.0
+  functional_role_history: Array<{ role: string; confidence: number; timestamp: number }>;
+
+  // Vector 2: Org Type (Supplier, Retailer)
+  org_type: 'supplier' | 'retailer' | null;
+  org_type_confidence: number; // 0.0 - 1.0
+  org_type_history: Array<{ type: string; confidence: number; timestamp: number }>;
+
+  // Vector 3: Org Size (S, M, L)
+  org_size: 'S' | 'M' | 'L' | null;
+  org_size_confidence: number; // 0.0 - 1.0
+  org_size_history: Array<{ size: string; confidence: number; timestamp: number }>;
+
+  // Vector 4: Product Focus (Beer, Spirits, Wine)
+  product_focus: 'beer' | 'spirits' | 'wine' | null;
+  product_focus_confidence: number; // 0.0 - 1.0
+  product_focus_history: Array<{ product: string; confidence: number; timestamp: number }>;
+
+  // Last Updated
+  vectors_updated_at: number; // Unix timestamp
+}
+
+/**
  * Persona Scores: Multi-dimensional User Classification
  *
  * Dimension 1: User Type (Supplier vs Distributor)
@@ -33,6 +66,9 @@ export interface PainPointDetails {
  * Dimension 3: Functional Focus (Sales, Marketing, Operations, Compliance)
  */
 export interface PersonaScores {
+  // ==================== NEW: Detection Vectors ====================
+  detection_vectors: PersonaDetectionVectors;
+
   // Dimension 1: User Type
   supplier_score: number; // 0.0 - 1.0
   distributor_score: number; // 0.0 - 1.0
@@ -185,9 +221,29 @@ export const PAIN_POINTS: Record<PainPointType, PainPointDetails> = {
 };
 
 /**
+ * Default Detection Vectors
+ */
+export const DEFAULT_DETECTION_VECTORS: PersonaDetectionVectors = {
+  functional_role: null,
+  functional_role_confidence: 0,
+  functional_role_history: [],
+  org_type: null,
+  org_type_confidence: 0,
+  org_type_history: [],
+  org_size: null,
+  org_size_confidence: 0,
+  org_size_history: [],
+  product_focus: null,
+  product_focus_confidence: 0,
+  product_focus_history: [],
+  vectors_updated_at: 0,
+};
+
+/**
  * Default Persona Scores (neutral state)
  */
 export const DEFAULT_PERSONA_SCORES: PersonaScores = {
+  detection_vectors: DEFAULT_DETECTION_VECTORS,
   supplier_score: 0.5,
   distributor_score: 0.5,
   craft_score: 0.33,

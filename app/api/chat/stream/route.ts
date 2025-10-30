@@ -10,7 +10,8 @@
 import { NextRequest } from 'next/server';
 import { getSession, updatePersona, addConversationMessage as addConvMsg, getConversationHistory } from '@/lib/session/session';
 import { validateAIConfiguration } from '@/lib/ai/orchestrator';
-import { detectPersonaSignals, updatePersonaWithSignals } from '@/lib/ai/persona-detection';
+import { detectPersonaSignals, updatePersonaWithSignals, detectAndUpdateVectors } from '@/lib/ai/persona-detection';
+import { getCurrentVectorClassification } from '@/lib/ai/vector-detection';
 import { getContextForLLM, getKnowledgeDocuments } from '@/lib/ai/knowledge-search';
 import { getPersonalizedSystemPrompt, PAIN_POINT_PROMPTS } from '@/lib/ai/prompts/system';
 import { recordPersonaSignal } from '@/lib/session/session';
@@ -170,11 +171,38 @@ async function processStreamWithController(
 
     updatedPersona = updatePersonaWithSignals(updatedPersona, signals);
 
+    // ==================== NEW: Update 4-Vector Detection ====================
+    // Detect and update the 4 key persona vectors based on message + interaction context
+    updatedPersona = detectAndUpdateVectors(message, updatedPersona, {
+      source: context?.source,
+      text: context?.text,
+      context: context?.context,
+    });
+
+    // Get current vector classification for logging/tracking
+    const vectorClassification = getCurrentVectorClassification(updatedPersona.detection_vectors);
+    console.log('[Stream] Persona vectors updated:', {
+      functional_role: vectorClassification.functional_role.value,
+      org_type: vectorClassification.org_type.value,
+      org_size: vectorClassification.org_size.value,
+      product_focus: vectorClassification.product_focus.value,
+    });
+    // ======================================================================
+
     sendEvent('stage', {
       stageId: 'signals',
       status: 'complete',
       stageName: 'Profile updated',
       progress: 45,
+    });
+
+    // Send persona vector update event for client awareness
+    sendEvent('persona_vectors', {
+      functional_role: vectorClassification.functional_role.value,
+      org_type: vectorClassification.org_type.value,
+      org_size: vectorClassification.org_size.value,
+      product_focus: vectorClassification.product_focus.value,
+      all_vectors_identified: vectorClassification.all_vectors_identified,
     });
 
     await delay(100);

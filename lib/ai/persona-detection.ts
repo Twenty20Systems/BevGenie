@@ -12,6 +12,7 @@
 
 import type { PersonaScores, PainPointType } from '@/lib/session/types';
 import { PAIN_POINTS } from '@/lib/session/types';
+import { detectVectorSignals, updateDetectionVectors } from '@/lib/ai/vector-detection';
 
 /**
  * Signal detection result
@@ -32,19 +33,22 @@ export interface DetectedSignal {
  *
  * @param message - User message to analyze
  * @param currentPersona - Current persona state (for context)
+ * @param interactionContext - Navigation/interaction context for 4-vector detection
  * @returns Array of detected signals
  *
  * @example
  * ```typescript
  * const signals = detectPersonaSignals(
  *   'We have trouble proving ROI for our field activities',
- *   currentPersona
+ *   currentPersona,
+ *   { source: 'hero_cta_click', text: 'ROI Tracking' }
  * );
  * ```
  */
 export function detectPersonaSignals(
   message: string,
-  currentPersona?: PersonaScores
+  currentPersona?: PersonaScores,
+  interactionContext?: any
 ): DetectedSignal[] {
   const signals: DetectedSignal[] = [];
   const lowerMessage = message.toLowerCase();
@@ -66,6 +70,33 @@ export function detectPersonaSignals(
   signals.push(...painPointSignals);
 
   return signals;
+}
+
+/**
+ * Detect and update the 4 key persona detection vectors
+ * Based on both message content and navigation interactions
+ *
+ * @param message - User message
+ * @param currentPersona - Current persona scores (for vector updates)
+ * @param interactionContext - Navigation/interaction context
+ * @returns Updated persona scores with vectors updated
+ */
+export function detectAndUpdateVectors(
+  message: string,
+  currentPersona: PersonaScores,
+  interactionContext?: any
+): PersonaScores {
+  // Detect vector signals from message and interaction
+  const vectorSignals = detectVectorSignals(message, interactionContext);
+
+  // Update detection vectors based on signals
+  const updatedVectors = updateDetectionVectors(currentPersona.detection_vectors, vectorSignals);
+
+  // Return persona with updated vectors
+  return {
+    ...currentPersona,
+    detection_vectors: updatedVectors,
+  };
 }
 
 /**
