@@ -64,9 +64,9 @@ export function ChatBubble({
         >
           <MessageCircle className="w-7 h-7 text-white" />
           <div className="absolute inset-0 rounded-full border-4 border-[#00C8FF] animate-ping opacity-75" />
-          {messages.length > 0 && (
+          {messages.filter(m => m.role === 'user').length > 0 && (
             <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-              {messages.filter(m => m.role === 'assistant').length}
+              {messages.filter(m => m.role === 'user').length}
             </div>
           )}
           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-[#0A1930] text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -109,7 +109,7 @@ export function ChatBubble({
           )}
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-            {messages.length === 0 && (
+            {messages.filter(m => m.role === 'user').length === 0 && (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                   <MessageCircle className="w-8 h-8 text-gray-400" />
@@ -141,23 +141,17 @@ export function ChatBubble({
               </div>
             )}
 
-            {messages.map((msg) => (
+            {messages.filter(m => m.role === 'user').map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className="flex justify-end"
               >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
-                    msg.role === 'user'
-                      ? 'bg-[#00C8FF] text-white rounded-br-sm'
-                      : 'bg-white text-gray-800 rounded-bl-sm border border-gray-200'
-                  }`}
-                >
+                <div className="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm bg-[#00C8FF] text-white rounded-br-sm">
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                   {msg.pageId && (
                     <button
                       onClick={() => scrollToPage(msg.pageId!)}
-                      className="mt-2 flex items-center gap-1 text-xs font-medium text-[#00C8FF] hover:text-[#00B8EF] transition-colors"
+                      className="mt-2 flex items-center gap-1 text-xs font-medium text-white hover:text-white/90 transition-colors"
                     >
                       <ExternalLink className="w-3 h-3" />
                       <span>View Generated Page</span>
