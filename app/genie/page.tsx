@@ -270,9 +270,9 @@ export default function GeniePage() {
                 <span className="text-[#00C8FF] text-sm font-medium">Powered by Advanced AI</span>
               </div>
 
-              <h1 className="text-6xl md:text-7xl font-bold mb-6 text-white leading-tight">
-                Meet BevGenie
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#00C8FF] to-[#00E5FF] mt-2">
+              <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
+                <span className="text-white">Meet BevGenie</span>
+                <span className="block text-[#00C8FF] mt-2">
                   Your AI Business Partner
                 </span>
               </h1>
