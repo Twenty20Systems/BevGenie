@@ -107,7 +107,7 @@ ROI CALCULATION:
 - Cost Savings: $${data.roi.costSaved}
 - Efficiency Gain: ${data.roi.efficiencyGain}%
 
-CREATE SLIDES (10-12 slides):
+CREATE SLIDES (13 slides total):
 
 SLIDE 1: TITLE SLIDE
 Title: "How BevGenie Solves ${topCategory} for ${functionalRole}s"
@@ -130,16 +130,16 @@ Content: Transform their questions into business problems
 SLIDE 4-7: PROBLEM-SOLUTION SLIDES (one per major problem, max 4 slides)
 Title: [Specific problem from their session]
 Content:
-  Your Question: "${exact user question}"
+  Your Question: "[exact user question here]"
 
   The Manual Way (Before):
-  ${beforeState with specifics}
+  [beforeState with specifics]
 
   With BevGenie (After):
-  ${afterState with specifics}
+  [afterState with specifics]
 
-  Feature Used: ${featureUsed}
-  Time Saved: ${timeSaved} minutes
+  Feature Used: [featureUsed]
+  Time Saved: [timeSaved] minutes
 
   Visual: Side-by-side comparison or process flow
 
@@ -164,30 +164,90 @@ Content:
 
 Visual: Bar chart or infographic
 
-SLIDE 10: FULL PLATFORM CAPABILITIES
-Title: "Beyond What You Tried Today"
-Content:
-- Features you used: [list from their session]
-- Features you haven't explored yet: [additional capabilities]
-- How these solve related problems
-Organize by category (Data, Analytics, Reporting, Competitive Intel)
+SLIDE 10: FEATURES YOU USED
+Title: "BevGenie Features in Action Today"
+Content: List the specific features they actually used during this session
+- [featureUsed from each problemSolution]
+- Brief description of what each feature does
+- Link back to their actual questions
+Visual: Icons or feature badges
 
-SLIDE 11: WHAT SUCCESS LOOKS LIKE
-Title: "Your Team with BevGenie"
-Content:
-- Specific outcomes for ${functionalRole} at a ${orgType}
-- Based on the problems you're solving
-- Reference their actual questions as use cases
-- 30/60/90 day transformation timeline
+SLIDE 11: RELEVANT FEATURES YOU HAVEN'T EXPLORED
+Title: "More Ways BevGenie Can Help ${functionalRole}s"
+Content: Based on their detected persona (${functionalRole} at ${orgType}), suggest highly relevant features they didn't try:
 
-SLIDE 12: NEXT STEPS
+For Sales Directors:
+- Territory Performance Analytics: Track sales by region with drill-down capabilities
+- Distributor Attention Score: Monitor distributor engagement and identify at-risk accounts
+- Competitive Win/Loss Analysis: Understand why you win or lose against competitors
+- Sales Forecast Accuracy: Predict future sales trends based on historical data
+- Account Health Monitoring: Real-time alerts on account performance changes
+
+For Marketing Leaders:
+- Brand Performance Tracking: Monitor brand health metrics across channels
+- Campaign ROI Analysis: Measure marketing campaign effectiveness
+- Consumer Sentiment Analysis: Track brand perception and consumer feedback
+- Market Share Trends: Visualize market share changes over time
+- Promotional Effectiveness: Analyze promotion performance and optimize spend
+
+For Executives:
+- Executive Dashboard: High-level KPIs and business metrics at a glance
+- Strategic Planning Tools: Long-term forecasting and scenario planning
+- Board-Ready Reports: Auto-generated presentations for stakeholder meetings
+- Competitive Intelligence: Market positioning and competitive landscape analysis
+- Business Health Score: Overall company performance indicators
+
+For Operations Managers:
+- Supply Chain Analytics: Track inventory, logistics, and distribution efficiency
+- Operational KPIs: Monitor production, fulfillment, and operational metrics
+- Cost Analysis Tools: Identify cost-saving opportunities across operations
+- Performance Benchmarking: Compare against industry standards
+- Process Optimization: Identify bottlenecks and improvement opportunities
+
+For Finance Directors:
+- Financial Performance Dashboard: Revenue, margins, and profitability analysis
+- Budget vs. Actual Tracking: Monitor spending and identify variances
+- Cost Attribution Analysis: Understand where money is being spent and why
+- ROI Calculator: Measure return on investment across initiatives
+- Financial Forecasting: Predict future financial performance
+
+Show 3-4 features most relevant to their persona and explain:
+- What problem it solves
+- How it relates to questions they asked
+- Estimated time savings
+Visual: Feature showcase with screenshots or mockups
+
+SLIDE 12: WHAT SUCCESS LOOKS LIKE
+Title: "Your Team with BevGenie - 90 Day Transformation"
+Content:
+Day 1-30: Quick Wins
+- Answer the questions you asked today in seconds, not hours
+- Real-time access to [specific data they needed]
+- Eliminate manual [specific tasks from their beforeState]
+
+Day 31-60: Expanding Usage
+- [Specific feature 1] becomes daily habit for ${functionalRole} team
+- [Specific feature 2] reduces [specific pain point] by 80%
+- Team adoption across [relevant departments]
+
+Day 61-90: Strategic Impact
+- Data-driven decisions based on real-time insights
+- ${data.roi.hoursSaved} hours saved per session × frequency = [calculate monthly savings]
+- Competitive advantage through faster, smarter decisions
+
+Reference their actual questions as ongoing use cases
+Visual: Timeline infographic
+
+SLIDE 13: NEXT STEPS
 Title: "Let's Move Forward"
 Content:
 - Trial extension or purchase options
-- Implementation timeline
-- Training and onboarding
-- Support and resources
-- Clear call to action
+- Implementation timeline: Get your team up and running in 1 week
+- Training and onboarding: Personalized sessions for ${functionalRole}s
+- Dedicated support and resources
+- Schedule follow-up demo of features you haven't tried
+- Clear call to action: "Start with [specific feature relevant to their top question]"
+Visual: Next steps checklist
 
 IMPORTANT RULES:
 1. Use their ACTUAL questions word-for-word (in quotes)
