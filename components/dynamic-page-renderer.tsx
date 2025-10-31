@@ -202,7 +202,7 @@ function SectionRenderer({
 
 /**
  * Hero Section Component
- * Large headline with optional CTA button - Professional B2B SaaS styling
+ * Large headline with optional CTA button - Modern design with floating blur elements
  */
 function HeroSection({
   section,
@@ -228,26 +228,27 @@ function HeroSection({
     }
   };
 
+  // Split headline to apply gradient to last word
+  const words = section.headline.split(' ');
+  const lastWord = words[words.length - 1];
+  const restOfHeadline = words.slice(0, -1).join(' ');
+
   return (
-    <div
-      className="hero-section py-16 px-12 rounded-xl"
-      style={{
-        backgroundColor: `linear-gradient(135deg, ${COLORS.navy}15, ${COLORS.cyan}10)`,
-        border: `1px solid ${COLORS.mediumGray}`,
-      }}
-    >
-      <div className="max-w-3xl">
-        <h2
-          className="text-5xl md:text-6xl font-bold mb-6 leading-tight"
-          style={{ color: COLORS.navy }}
-        >
-          {section.headline}
+    <div className="hero-section relative min-h-[85vh] flex items-center overflow-hidden py-20 px-6 rounded-2xl">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#fdf8f6] via-white to-[#ecfeff]" />
+
+      {/* Floating blur elements */}
+      <div className="absolute top-20 right-10 w-96 h-96 bg-[#AA6C39]/10 rounded-full blur-3xl animate-pulse-slow" />
+      <div className="absolute bottom-20 left-10 w-80 h-80 bg-[#00C8FF]/10 rounded-full blur-3xl animate-pulse-slow" />
+
+      <div className="max-w-4xl relative z-10">
+        <h2 className="text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 leading-tight">
+          <span style={{ color: COLORS.navy }}>{restOfHeadline} </span>
+          <span className="gradient-text">{lastWord}</span>
         </h2>
         {section.subheadline && (
-          <p
-            className="text-xl md:text-2xl mb-10 leading-relaxed font-medium"
-            style={{ color: COLORS.darkGray }}
-          >
+          <p className="text-xl leading-relaxed mb-10 max-w-3xl" style={{ color: COLORS.darkGray }}>
             {section.subheadline}
           </p>
         )}
@@ -255,18 +256,16 @@ function HeroSection({
           <div className="flex flex-wrap gap-4 mt-8">
             <button
               onClick={handleCtaClick}
-              className="px-8 py-4 font-bold rounded-lg transition-all hover:shadow-lg transform hover:scale-105 text-white"
-              style={{ backgroundColor: COLORS.cyan }}
+              className="px-10 py-5 font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all text-white bg-gradient-to-r from-[#AA6C39] to-[#8B5A2B]"
             >
               {section.ctaButton.text}
             </button>
             <button
               onClick={handleLearnMore}
-              className="px-8 py-4 font-bold rounded-lg transition-all hover:shadow-lg border-2"
+              className="px-10 py-5 font-bold rounded-xl transition-all hover:shadow-lg hover:-translate-y-1 border-2 bg-white"
               style={{
                 borderColor: COLORS.navy,
                 color: COLORS.navy,
-                backgroundColor: COLORS.white,
               }}
             >
               Learn More
@@ -280,54 +279,45 @@ function HeroSection({
 
 /**
  * Feature Grid Section Component
- * Grid of features with icons and descriptions - Professional B2B SaaS styling
+ * Grid of features with icons and descriptions - Modern design with gradient icons
  */
 function FeatureGridSection({ section }: { section: any }) {
   return (
-    <div className="feature-grid-section">
+    <div className="feature-grid-section py-20">
       {section.title && (
-        <h3
-          className="text-4xl font-bold mb-3"
-          style={{ color: COLORS.navy }}
-        >
+        <h3 className="text-4xl lg:text-5xl font-bold mb-4" style={{ color: COLORS.navy }}>
           {section.title}
         </h3>
       )}
       {section.subtitle && (
-        <p className="mb-12 text-lg" style={{ color: COLORS.darkGray }}>
+        <p className="mb-12 text-xl leading-relaxed" style={{ color: COLORS.darkGray }}>
           {section.subtitle}
         </p>
       )}
 
       <div
-        className={`grid grid-cols-1 md:grid-cols-${section.columns} gap-8`}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         style={{
-          gridTemplateColumns: `repeat(${Math.min(section.columns, 3)}, minmax(0, 1fr))`,
+          gridTemplateColumns: section.columns
+            ? `repeat(${Math.min(section.columns, 3)}, minmax(0, 1fr))`
+            : undefined,
         }}
       >
         {section.features.map((feature: any, idx: number) => (
           <div
             key={idx}
-            className="feature-card p-8 rounded-xl hover:shadow-xl transition-all hover:border-cyan-300 hover:translate-y-[-4px] duration-300"
+            className="feature-card p-8 rounded-2xl hover:shadow-xl transition-all hover:-translate-y-1 duration-300 border-2 group"
             style={{
               backgroundColor: COLORS.white,
-              border: `2px solid ${COLORS.mediumGray}`,
+              borderColor: COLORS.mediumGray,
             }}
           >
             {feature.icon && (
-              <div
-                className="text-5xl mb-4 inline-flex items-center justify-center w-14 h-14 rounded-lg"
-                style={{
-                  backgroundColor: `${COLORS.cyan}15`,
-                }}
-              >
+              <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#AA6C39] to-[#00C8FF] text-white text-3xl group-hover:scale-110 transition-transform">
                 {feature.icon}
               </div>
             )}
-            <h4
-              className="text-xl font-bold mb-3"
-              style={{ color: COLORS.navy }}
-            >
+            <h4 className="text-xl font-bold mb-3" style={{ color: COLORS.navy }}>
               {feature.title}
             </h4>
             <p className="text-base leading-relaxed" style={{ color: COLORS.textGray }}>
@@ -486,7 +476,7 @@ function ComparisonTableSection({ section }: { section: any }) {
 
 /**
  * CTA Section Component
- * Call-to-action buttons with various actions - Professional B2B SaaS styling
+ * Call-to-action buttons with various actions - Modern design with dramatic gradients
  */
 function CTASection({
   section,
@@ -506,36 +496,35 @@ function CTASection({
   };
 
   return (
-    <div
-      className="cta-section p-16 rounded-2xl shadow-2xl text-center text-white"
-      style={{
-        backgroundColor: `linear-gradient(135deg, ${COLORS.navy}, #003d7a)`,
-      }}
-    >
-      <h3 className="text-4xl md:text-5xl font-bold mb-4">{section.title}</h3>
-      {section.description && (
-        <p className="text-lg mb-12 max-w-2xl mx-auto leading-relaxed" style={{ color: '#d1d5db' }}>
-          {section.description}
-        </p>
-      )}
+    <div className="cta-section relative py-20 px-6 rounded-2xl shadow-2xl text-center text-white overflow-hidden">
+      {/* Gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#AA6C39] via-[#0A1930] to-[#243b53]" />
 
-      <div className="flex flex-wrap gap-4 justify-center mt-10">
-        {section.buttons.map((button: any, idx: number) => (
-          <button
-            key={idx}
-            onClick={() => handleButtonClick(button)}
-            className={`px-8 py-4 font-bold rounded-lg transition-all hover:shadow-xl transform hover:scale-105 ${
-              button.primary ? 'text-navy' : ''
-            }`}
-            style={{
-              backgroundColor: button.primary ? COLORS.cyan : 'transparent',
-              border: button.primary ? 'none' : `2px solid ${COLORS.cyan}`,
-              color: button.primary ? COLORS.navy : COLORS.cyan,
-            }}
-          >
-            {button.text}
-          </button>
-        ))}
+      {/* Floating blur elements */}
+      <div className="absolute top-10 right-10 w-64 h-64 bg-[#00C8FF]/20 rounded-full blur-3xl animate-pulse-slow" />
+      <div className="absolute bottom-10 left-10 w-64 h-64 bg-[#AA6C39]/20 rounded-full blur-3xl animate-pulse-slow" />
+
+      <div className="relative z-10">
+        <h3 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">{section.title}</h3>
+        {section.description && (
+          <p className="text-xl mb-12 max-w-2xl mx-auto leading-relaxed opacity-90">
+            {section.description}
+          </p>
+        )}
+
+        <div className="flex flex-wrap gap-4 justify-center mt-10">
+          {section.buttons.map((button: any, idx: number) => (
+            <button
+              key={idx}
+              onClick={() => handleButtonClick(button)}
+              className={`px-10 py-5 font-bold rounded-xl transition-all hover:shadow-xl hover:-translate-y-1 ${
+                button.primary ? 'bg-white text-[#0A1930]' : 'border-2 border-white text-white bg-transparent'
+              }`}
+            >
+              {button.text}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -609,40 +598,31 @@ function FAQSection({ section }: { section: any }) {
 
 /**
  * Metrics Section Component
- * Display key metrics and statistics - Professional B2B SaaS styling
+ * Display key metrics and statistics - Modern design with gradient numbers
  */
 function MetricsSection({ section }: { section: any }) {
   return (
-    <div className="metrics-section">
+    <div className="metrics-section py-20">
       {section.title && (
-        <h3
-          className="text-4xl font-bold mb-12"
-          style={{ color: COLORS.navy }}
-        >
+        <h3 className="text-4xl lg:text-5xl font-bold mb-12 text-center" style={{ color: COLORS.navy }}>
           {section.title}
         </h3>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {section.metrics.map((metric: any, idx: number) => (
           <div
             key={idx}
-            className="metric-card p-10 rounded-xl text-center hover:shadow-xl transition-all hover:translate-y-[-4px] duration-300"
+            className="metric-card p-8 rounded-2xl text-center hover:shadow-xl transition-all hover:-translate-y-1 duration-300 border-2"
             style={{
               backgroundColor: COLORS.white,
-              border: `2px solid ${COLORS.mediumGray}`,
+              borderColor: COLORS.mediumGray,
             }}
           >
-            <div
-              className="text-6xl font-bold mb-4"
-              style={{ color: COLORS.cyan }}
-            >
+            <div className="text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-[#AA6C39] to-[#00C8FF] bg-clip-text text-transparent">
               {metric.value}
             </div>
-            <p
-              className="text-xl font-bold mb-3"
-              style={{ color: COLORS.navy }}
-            >
+            <p className="text-xl font-bold mb-3" style={{ color: COLORS.navy }}>
               {metric.label}
             </p>
             {metric.description && (
@@ -659,52 +639,42 @@ function MetricsSection({ section }: { section: any }) {
 
 /**
  * Steps Section Component
- * Implementation or process steps with timeline
+ * Implementation or process steps with gradient timeline
  */
 function StepsSection({ section }: { section: any }) {
   return (
-    <div className="steps-section">
+    <div className="steps-section py-20">
       {section.title && (
-        <h3
-          className="text-2xl font-bold mb-2"
-          style={{ color: COLORS.navy }}
-        >
+        <h3 className="text-4xl lg:text-5xl font-bold mb-4" style={{ color: COLORS.navy }}>
           {section.title}
         </h3>
       )}
       {section.timeline && (
-        <p className="text-lg font-semibold mb-8" style={{ color: COLORS.cyan }}>
+        <p className="text-xl font-semibold mb-12 bg-gradient-to-r from-[#AA6C39] to-[#00C8FF] bg-clip-text text-transparent">
           Timeline: {section.timeline}
         </p>
       )}
 
       <div className="relative">
-        {/* Vertical line */}
-        <div
-          className="absolute left-6 top-0 bottom-0 w-1 hidden md:block"
-          style={{ backgroundColor: COLORS.cyan }}
-        />
+        {/* Vertical gradient line */}
+        <div className="absolute left-8 top-0 bottom-0 w-1 hidden md:block bg-gradient-to-b from-[#AA6C39] via-[#00C8FF] to-[#AA6C39]" />
 
         {/* Steps */}
         <div className="space-y-8">
           {section.steps.map((step: any, idx: number) => (
             <div key={idx} className="flex gap-6">
               <div className="flex-shrink-0">
-                <div
-                  className="flex items-center justify-center w-12 h-12 rounded-full text-white font-bold text-lg shadow-lg"
-                  style={{ backgroundColor: COLORS.navy }}
-                >
+                <div className="flex items-center justify-center w-16 h-16 rounded-full text-white font-bold text-xl shadow-lg bg-gradient-to-br from-[#AA6C39] to-[#00C8FF]">
                   {step.number}
                 </div>
               </div>
-              <div className="flex-grow pt-2">
-                <h4
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: COLORS.navy }}
-                >
+              <div className="flex-grow pt-2 p-6 bg-white rounded-2xl border-2 hover:shadow-xl hover:-translate-y-1 transition-all" style={{ borderColor: COLORS.mediumGray }}>
+                <h4 className="text-xl font-bold mb-2" style={{ color: COLORS.navy }}>
                   {step.title}
                 </h4>
-                <p style={{ color: COLORS.textGray }}>{step.description}</p>
+                <p className="text-base leading-relaxed" style={{ color: COLORS.textGray }}>
+                  {step.description}
+                </p>
               </div>
             </div>
           ))}

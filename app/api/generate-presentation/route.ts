@@ -73,7 +73,7 @@ async function generatePresentationContent(data: PresentationData): Promise<Slid
   const topCategory = getTopCategory(data.categoryBreakdown);
 
   const prompt = `
-Generate a highly specific management presentation based on this user's actual session with BevGenie AI.
+Generate a concise 4-slide presentation based on this user's actual session with BevGenie AI.
 
 PERSONA:
 - Role: ${functionalRole}
@@ -107,156 +107,81 @@ ROI CALCULATION:
 - Cost Savings: $${data.roi.costSaved}
 - Efficiency Gain: ${data.roi.efficiencyGain}%
 
-CREATE SLIDES (13 slides total):
+CREATE EXACTLY 4 SLIDES:
 
-SLIDE 1: TITLE SLIDE
-Title: "How BevGenie Solves ${topCategory} for ${functionalRole}s"
-Subtitle: "Based on ${data.session.duration} session | ${data.session.queriesAsked} challenges addressed"
+SLIDE 1: PERSONA DETAILS
+Title: "About You"
+Content type: bullets
+Content: Create 4-6 concise bullet points about the person based on their session:
+- Role: ${functionalRole} at ${orgType} (${orgSize})
+- Product Focus: ${data.persona.product_focus_detected || 'Beverage Industry'}
+- Primary Interests: ${topCategory} (based on ${data.session.queriesAsked} questions asked)
+- Session Duration: ${data.session.duration}
+- Key Focus Areas: [Summarize the 2-3 main topics from their questions]
 
-SLIDE 2: YOUR QUESTIONS TODAY
-Title: "The Questions You Asked"
-Content: List their actual questions (top 5-6) as bullet points
-- Use their EXACT words from actualQuestions
-- Group by category if many questions
-Speaker Notes: "These are the exact questions you explored today..."
+Visual: Professional profile-style layout with icons
+Speaker Notes: "This slide captures who you are and what you explored today."
 
-SLIDE 3: THE REAL CHALLENGE
-Title: "What This Really Means"
-Content: Transform their questions into business problems
-- For each major question, explain the underlying challenge
-- Use problemStatement from each problemSolution
-- Show why these problems matter (cost, time, competitive risk)
+SLIDE 2: WHAT IS BEVGENIE
+Title: "What is BevGenie?"
+Content type: bullets
+Content: Create 5-7 clear, concise bullet points explaining BevGenie:
+- AI-powered business intelligence platform for the beverage industry
+- Instant answers to complex business questions across sales, marketing, and operations
+- Real-time data analysis replacing hours of manual work
+- Personalized insights based on your role and organization type
+- Features include: [List 3-4 most relevant features for ${functionalRole}s]
+- Proven ROI: Average time savings of [calculate typical savings for this persona]
+- Trusted by ${orgType}s ranging from craft to enterprise scale
 
-SLIDE 4-7: PROBLEM-SOLUTION SLIDES (one per major problem, max 4 slides)
-Title: [Specific problem from their session]
-Content:
-  Your Question: "[exact user question here]"
+Visual: BevGenie logo with clean, modern iconography
+Speaker Notes: "BevGenie transforms how beverage professionals make data-driven decisions."
 
-  The Manual Way (Before):
-  [beforeState with specifics]
+SLIDE 3: HOW BEVGENIE HELPS YOU - PART 1
+Title: "How BevGenie Solves Your Challenges"
+Content type: bullets
+Content: Based on their ACTUAL questions, create 5-7 specific bullet points showing how BevGenie helps:
+- Start each bullet with "✓" to show it's a solution
+- Reference their actual questions (use quotes)
+- For example: ✓ When you asked "${data.actualQuestions[0]}", BevGenie provided [specific answer/insight]
+- Show the before/after: "Before: [manual process]. After: [instant insight]"
+- Include time saved: "Saved ${data.problemSolutions[0]?.timeSaved || 15} minutes on this task alone"
+- Make each point specific to their session, NOT generic
 
-  With BevGenie (After):
-  [afterState with specifics]
+Example format:
+✓ Your Question: "${data.actualQuestions[0]}"
+  BevGenie's Answer: [Specific solution from ${data.problemSolutions[0]?.bevGenieSolution}]
+  Time Saved: ${data.problemSolutions[0]?.timeSaved || 15} minutes
 
-  Feature Used: [featureUsed]
-  Time Saved: [timeSaved] minutes
+Visual: Checkmarks with copper/cyan gradient, clean layout
+Speaker Notes: "These are the exact problems you solved today with BevGenie."
 
-  Visual: Side-by-side comparison or process flow
+SLIDE 4: HOW BEVGENIE HELPS YOU - PART 2
+Title: "Your Results & ROI"
+Content type: stats
+Content: Create 4-6 key metrics showing their session impact:
+- Questions Answered: ${data.session.queriesAsked}
+- Time Saved Today: ${data.roi.hoursSaved} hours
+- Cost Savings: $${data.roi.costSaved}
+- Efficiency Gain: ${data.roi.efficiencyGain}%
+- Features You Used: [List 2-3 actual features from ${data.problemSolutions.map(ps => ps.featureUsed).join(', ')}]
+- Projected Monthly Savings: [Calculate: $${data.roi.costSaved} × 4 weeks = monthly value]
 
-SLIDE 8: WHAT YOU DISCOVERED
-Title: "Insights Uncovered in ${data.session.duration}"
-Content:
-- Specific insights/answers to their questions
-- Data points they found
-- Decisions they can now make
-- Use examples from their actual queries
+Additional bullet points below stats:
+- "If you used BevGenie weekly, you'd save approximately [calculate annual savings] per year"
+- "Your top questions can now be answered in seconds instead of hours"
+- "Next Steps: [Suggest 1-2 relevant features for ${functionalRole} to explore]"
 
-SLIDE 9: TIME & COST IMPACT
-Title: "The ROI of This Session Alone"
-Content:
-  Questions Answered: ${data.session.queriesAsked}
-  Time Saved: ${data.roi.hoursSaved} hours
-  Cost Savings: $${data.roi.costSaved}
-
-  Projected Annual Impact:
-  - Calculate based on ${functionalRole} at a ${orgSize} ${orgType}
-  - Show weekly/monthly savings
-
-Visual: Bar chart or infographic
-
-SLIDE 10: FEATURES YOU USED
-Title: "BevGenie Features in Action Today"
-Content: List the specific features they actually used during this session
-- [featureUsed from each problemSolution]
-- Brief description of what each feature does
-- Link back to their actual questions
-Visual: Icons or feature badges
-
-SLIDE 11: RELEVANT FEATURES YOU HAVEN'T EXPLORED
-Title: "More Ways BevGenie Can Help ${functionalRole}s"
-Content: Based on their detected persona (${functionalRole} at ${orgType}), suggest highly relevant features they didn't try:
-
-For Sales Directors:
-- Territory Performance Analytics: Track sales by region with drill-down capabilities
-- Distributor Attention Score: Monitor distributor engagement and identify at-risk accounts
-- Competitive Win/Loss Analysis: Understand why you win or lose against competitors
-- Sales Forecast Accuracy: Predict future sales trends based on historical data
-- Account Health Monitoring: Real-time alerts on account performance changes
-
-For Marketing Leaders:
-- Brand Performance Tracking: Monitor brand health metrics across channels
-- Campaign ROI Analysis: Measure marketing campaign effectiveness
-- Consumer Sentiment Analysis: Track brand perception and consumer feedback
-- Market Share Trends: Visualize market share changes over time
-- Promotional Effectiveness: Analyze promotion performance and optimize spend
-
-For Executives:
-- Executive Dashboard: High-level KPIs and business metrics at a glance
-- Strategic Planning Tools: Long-term forecasting and scenario planning
-- Board-Ready Reports: Auto-generated presentations for stakeholder meetings
-- Competitive Intelligence: Market positioning and competitive landscape analysis
-- Business Health Score: Overall company performance indicators
-
-For Operations Managers:
-- Supply Chain Analytics: Track inventory, logistics, and distribution efficiency
-- Operational KPIs: Monitor production, fulfillment, and operational metrics
-- Cost Analysis Tools: Identify cost-saving opportunities across operations
-- Performance Benchmarking: Compare against industry standards
-- Process Optimization: Identify bottlenecks and improvement opportunities
-
-For Finance Directors:
-- Financial Performance Dashboard: Revenue, margins, and profitability analysis
-- Budget vs. Actual Tracking: Monitor spending and identify variances
-- Cost Attribution Analysis: Understand where money is being spent and why
-- ROI Calculator: Measure return on investment across initiatives
-- Financial Forecasting: Predict future financial performance
-
-Show 3-4 features most relevant to their persona and explain:
-- What problem it solves
-- How it relates to questions they asked
-- Estimated time savings
-Visual: Feature showcase with screenshots or mockups
-
-SLIDE 12: WHAT SUCCESS LOOKS LIKE
-Title: "Your Team with BevGenie - 90 Day Transformation"
-Content:
-Day 1-30: Quick Wins
-- Answer the questions you asked today in seconds, not hours
-- Real-time access to [specific data they needed]
-- Eliminate manual [specific tasks from their beforeState]
-
-Day 31-60: Expanding Usage
-- [Specific feature 1] becomes daily habit for ${functionalRole} team
-- [Specific feature 2] reduces [specific pain point] by 80%
-- Team adoption across [relevant departments]
-
-Day 61-90: Strategic Impact
-- Data-driven decisions based on real-time insights
-- ${data.roi.hoursSaved} hours saved per session × frequency = [calculate monthly savings]
-- Competitive advantage through faster, smarter decisions
-
-Reference their actual questions as ongoing use cases
-Visual: Timeline infographic
-
-SLIDE 13: NEXT STEPS
-Title: "Let's Move Forward"
-Content:
-- Trial extension or purchase options
-- Implementation timeline: Get your team up and running in 1 week
-- Training and onboarding: Personalized sessions for ${functionalRole}s
-- Dedicated support and resources
-- Schedule follow-up demo of features you haven't tried
-- Clear call to action: "Start with [specific feature relevant to their top question]"
-Visual: Next steps checklist
+Visual: Large gradient numbers for stats, clean modern layout
+Speaker Notes: "This is the real impact of using BevGenie based on your actual session today."
 
 IMPORTANT RULES:
-1. Use their ACTUAL questions word-for-word (in quotes)
-2. Every problem-solution must reference their specific queries
-3. NO generic examples - only use their session data
-4. Make before/after scenarios specific to their questions
-5. Calculate ROI based on THEIR actual usage
-6. Show features they ACTUALLY used, not hypothetical ones
-7. Make it feel like "this presentation is about YOUR experience"
+1. Keep ALL content as concise bullet points - NO long paragraphs
+2. Use their ACTUAL questions word-for-word (in quotes) on slides 3-4
+3. All benefits must reference their specific session data
+4. Make it personal - use "you" and "your" throughout
+5. Keep it simple and scannable - maximum 7 bullets per slide
+6. Focus on THEIR experience, not generic marketing
 
 Return a JSON array of slides with this exact structure:
 [
