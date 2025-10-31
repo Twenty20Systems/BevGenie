@@ -200,35 +200,97 @@ CRITICAL REQUIREMENTS:
 9. Structure content to flow logically from problem → insight → solution → action
 10. Use professional B2B SaaS language appropriate for C-suite executives and department heads
 
-DESIGN & VISUAL REQUIREMENTS:
-The generated pages will use BevGenie's professional component library with the following theme:
-- Primary Color: #00C8FF (electric cyan) - use for CTAs, highlights, and accents
-- Secondary Color: #0A1930 (deep navy) - use for headers and text
-- Background: #FFFFFF (white) with #F8F9FA (light gray) for alternating sections
-- Text: #0A1930 for headings, #666666 for body text
+DESIGN & VISUAL REQUIREMENTS - BEVGENIE DESIGN SYSTEM:
+The generated pages will use BevGenie's modern design system with production-ready styling:
 
-Available Professional Components (that will be imported):
-- PageHeader: Gradient headers with title and description
-- MetricsGrid: Professional KPI display grids
-- KPICard: Individual metric cards with trends and change indicators
-- Card: Content section cards with consistent styling
-- Button: Primary/secondary buttons with hover effects
-- ActionCard: Interactive navigation cards with icons
+BevGenie Brand Colors (PRIMARY - Use These):
+- Copper: #AA6C39 (primary brand color for CTAs, accents, icons)
+- Dark Copper: #8B5A2B (hover states, darker accents)
+- Cyan: #00C8FF (secondary brand color for highlights, links)
+- Dark Cyan: #00B8EF (hover states for cyan elements)
+- Navy: #0A1930 (dark backgrounds, text, headers)
+- White: #FFFFFF (clean backgrounds)
+- Light Gray: #F9FAFB (alternating section backgrounds)
+
+Brand Gradients (Use for Impact):
+- Copper Gradient: from-[#AA6C39] to-[#8B5A2B] (primary buttons, hero sections)
+- Cyan Gradient: from-[#00C8FF] to-[#00B8EF] (secondary accents, highlights)
+- Copper-Cyan Gradient: from-[#AA6C39] to-[#00C8FF] (special elements, gradient text)
+- Dark Gradient: from-[#0A1930] to-[#243b53] (dramatic backgrounds)
+
+Typography Scale (Use Larger Fonts for Modern Feel):
+- Headlines: text-5xl lg:text-6xl xl:text-7xl (48-72px) - Make them BIG
+- Subheadlines: text-2xl lg:text-3xl (24-30px)
+- Body Text: text-xl (20px) - More readable than text-base
+- Small Text: text-sm (14px)
+
+Available Professional Components:
+- Hero sections with gradient backgrounds and floating blur elements
+- Stats/Metrics grids with large gradient numbers
+- Feature cards with hover effects and gradient icons
+- Timeline/Steps with connecting gradient lines
+- CTA sections with dramatic gradient backgrounds
+- Comparison tables with branded styling
 
 Animation Classes Available:
-- animate-fade-in: Smooth fade-in effect (0.5s)
-- animate-slide-up: Slide up from bottom with fade (0.6s)
-- animate-slide-in-left: Slide in from left (0.6s)
-- animate-slide-in-right: Slide in from right (0.6s)
-- animate-scale-in: Scale up with fade (0.4s)
-- animate-stagger-1, animate-stagger-2, animate-stagger-3: Staggered delays for sequential animations
+- animate-fade-in: Smooth fade-in (0.5s)
+- animate-slide-up: Slide up from bottom (0.6s)
+- animate-slide-in-left/right: Directional slides
+- animate-scale-in: Scale up effect (0.4s)
+- animate-float: Floating animation for decorative elements
+- animate-pulse-slow: Slow pulse for attention
+- animate-stagger-1/2/3: Sequential animation delays
+- gradient-text: Copper-to-cyan gradient text effect
 
-Hover Effects to Apply:
-- hover:scale-105 transition-transform: For interactive cards
-- hover:shadow-xl transition-shadow: For card depth
-- hover:bg-opacity-90 transition-colors: For buttons
+Modern Hover Effects (Apply to Interactive Elements):
+- hover:-translate-y-1 hover:shadow-xl: Lift effect on cards
+- hover:-translate-y-2: Stronger lift for primary actions
+- hover:scale-110: Icon scaling on hover
+- hover:border-[#00C8FF]: Border color change
+- group and group-hover: Parent-child hover interactions
+- glow-copper / glow-cyan: Branded glow effects
 
-Your JSON output should structure sections that will render using these components with smooth animations
+Pattern Utilities:
+- pattern-dots: Subtle dot pattern background
+- pattern-grid: Subtle grid pattern background
+
+CRITICAL SPACING & SIZE GUIDELINES:
+- Sections: py-20 (80px vertical padding) for generous whitespace
+- Cards: p-8 (32px padding) for comfortable spacing
+- Grid gaps: gap-8 or gap-12 for breathing room
+- Button padding: px-8 py-4 for substantial CTAs
+- Icon sizes: w-16 h-16 for feature icons (larger than typical)
+
+MODERN VISUAL PATTERNS TO FOLLOW:
+1. Hero Sections:
+   - min-h-[85vh] to fill viewport
+   - Floating blur elements with animate-pulse
+   - Large gradient headlines (5xl-7xl)
+   - Two-column grid on desktop
+   - Decorative elements in background
+
+2. Stats/Metrics:
+   - Large gradient numbers (text-5xl)
+   - 4-column grid on desktop
+   - Hover lift effects
+   - Icon in gradient container
+   - Clear labels and descriptions
+
+3. Feature Cards:
+   - Larger padding (p-8)
+   - Gradient border glow on hover
+   - Icon size w-16 h-16
+   - Hover lift with shadow increase
+   - Gradient icon backgrounds
+
+4. CTAs:
+   - Dramatic gradient backgrounds
+   - Large buttons (px-10 py-5)
+   - White text on dark gradient
+   - Contrasting button styles
+   - Trust indicators below buttons
+
+Your JSON output should leverage these modern styles for maximum visual impact
 
 CONTENT GUIDELINES:
 - Beverage Industry Focus: Reference specific categories (spirits, beer, wine, non-alcoholic), market segments, and distributor challenges
@@ -262,11 +324,18 @@ Each section has a type property with requirements:
 - "metrics": title (optional), metrics array with value/label/description
 - "steps": title (optional), steps array with number/title/description, timeline (optional)
 
-STYLING & ANIMATION HINTS:
-- Hero sections should have gradient backgrounds (from-[#0A1930] to-[#1A3A5A])
-- Apply animate-fade-in to top-level sections for smooth entrance
-- Use animate-slide-up for cards and content blocks that appear on scroll
-- Add animate-stagger-1, animate-stagger-2, animate-stagger-3 to sequential items in grids
+STYLING & ANIMATION IMPLEMENTATION:
+- Hero sections: Use gradient backgrounds (from-[#AA6C39] via-[#0A1930] to-[#243b53]) with floating blur circles
+- Headlines: Apply gradient-text class or inline gradient for copper-to-cyan text effect
+- Metrics: Large gradient numbers with from-[#AA6C39] to-[#00C8FF] gradient
+- Feature icons: w-16 h-16 in rounded-2xl containers with gradient backgrounds
+- Cards: Apply hover:-translate-y-1 hover:shadow-xl for lift effect
+- Buttons: Copper gradient (from-[#AA6C39] to-[#8B5A2B]) for primary, border-2 border-[#00C8FF] for secondary
+- Sections: py-20 for generous vertical spacing
+- Grids: gap-8 or gap-12 for modern whitespace
+- Apply animate-fade-in to sections, animate-slide-up to cards
+- Use animate-stagger-1/2/3 for sequential grid items
+- Add decorative elements: floating blur orbs with animate-pulse-slow
 - Feature grids should have hover:scale-105 transition-transform on cards
 - Metrics should use KPICard styling with trend indicators (up/down arrows)
 - CTA buttons should be prominent with primary color (#00C8FF)
