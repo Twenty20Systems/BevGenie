@@ -1,144 +1,387 @@
 'use client';
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from 'react';
 import { Navigation } from "@/components/navigation"
 import { Hero } from "@/components/hero"
 import { Challenges } from "@/components/challenges"
 import { DataPowered } from "@/components/data-powered"
 import { Solutions } from "@/components/solutions"
 import { Footer } from "@/components/footer"
-import { ChatWidget } from "@/components/chat-widget"
-import { PageWithChatSidebar } from "@/components/page-with-chat-sidebar"
-import { useChat } from "@/hooks/useChat"
-import type { BevGeniePage } from "@/lib/ai/page-specs"
+import { ChatBubble } from '@/components/genie/chat-bubble';
+import { BevGenieVisualLoader } from '@/components/genie/loading-screen';
+import { DynamicContent } from '@/components/genie/dynamic-content';
+import { PresentationBubble } from '@/components/genie/presentation-bubble';
+import type { BevGeniePage } from '@/lib/ai/page-specs';
+import { SessionTracker } from '@/lib/session/session-tracker';
+import type { PersonaScores } from '@/lib/session/types';
 
-// Default demo page - shows when user opens chat
-const DEFAULT_DEMO_PAGE: BevGeniePage = {
-  type: 'solution_brief',
-  title: 'Welcome to BevGenie',
-  description: 'AI-powered solutions for your beverage business - Ask any question to get started',
-  sections: [
-    {
-      type: 'hero',
-      headline: 'Welcome to BevGenie AI Assistant',
-      subheadline: 'Ask any question about your beverage business and watch the page update in real-time',
-      ctas: [
-        { text: 'Try a Question', url: '#' },
-        { text: 'Learn More', url: '#' }
-      ]
-    },
-    {
-      type: 'feature_grid',
-      title: 'How BevGenie Can Help',
-      features: [
-        {
-          title: 'Get Instant Insights',
-          description: 'Ask questions about your business challenges and get AI-powered solutions',
-          icon: 'lightbulb'
-        },
-        {
-          title: 'Real-Time Pages',
-          description: 'Watch as this page updates based on your questions and context',
-          icon: 'zap'
-        },
-        {
-          title: 'Smart Recommendations',
-          description: 'Receive personalized recommendations tailored to your role and company',
-          icon: 'target'
-        },
-        {
-          title: 'Continuous Learning',
-          description: 'The AI learns from your questions to provide better insights over time',
-          icon: 'brain'
-        }
-      ]
-    },
-    {
-      type: 'metrics',
-      title: 'Why Choose BevGenie?',
-      metrics: [
-        {
-          value: '1000+',
-          label: 'Beverage Companies',
-          description: 'Already using BevGenie'
-        },
-        {
-          value: '24/7',
-          label: 'AI Support',
-          description: 'Available anytime, anywhere'
-        },
-        {
-          value: '95%',
-          label: 'Satisfaction',
-          description: 'Customer satisfaction rating'
-        }
-      ]
-    },
-    {
-      type: 'cta',
-      title: 'Start Your Conversation Now',
-      description: 'Use the chat sidebar to ask questions and get personalized solutions',
-      buttons: [
-        { text: 'Ask Your First Question', url: '#' },
-        { text: 'View Documentation', url: '#' }
-      ]
-    }
-  ]
-};
+/**
+ * Page History Item
+ */
+interface PageHistoryItem {
+  id: string;
+  query: string;
+  content: BevGeniePage;
+  textResponse?: string;
+  timestamp: number;
+  context?: any;
+}
+
+/**
+ * Chat Message
+ */
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  pageId?: string; // Link to generated page
+}
 
 export default function HomePage() {
-  const [showPageWithChat, setShowPageWithChat] = useState(false);
-  const [currentPage, setCurrentPage] = useState<BevGeniePage | null>(null);
-  const { messages, generationStatus, sendMessage, clearMessages } = useChat();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [currentQuery, setCurrentQuery] = useState('');
 
-  // Listen for page generation from chat
+  // Page stacking state - Array of all generated pages
+  const [pageHistory, setPageHistory] = useState<PageHistoryItem[]>([]);
+
+  // Chat message history
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  // Session Tracker for presentation generation
+  const [sessionTracker, setSessionTracker] = useState<SessionTracker | null>(null);
+
+  // Ref for scrolling to newly generated pages
+  const lastPageRef = useRef<HTMLDivElement>(null);
+
+  // Show landing page only when no pages generated yet
+  const showLandingPage = pageHistory.length === 0 && !isGenerating;
+
+  // Initialize session tracker
   useEffect(() => {
-    // Check if the last message has a generated page
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'assistant' && lastMessage.generatedPage) {
-        setCurrentPage(lastMessage.generatedPage.page);
+    const defaultPersona: PersonaScores = {
+      detection_vectors: {
+        functional_role: null,
+        functional_role_confidence: 0,
+        functional_role_history: [],
+        org_type: null,
+        org_type_confidence: 0,
+        org_type_history: [],
+        org_size: null,
+        org_size_confidence: 0,
+        org_size_history: [],
+        product_focus: null,
+        product_focus_confidence: 0,
+        product_focus_history: [],
+        vectors_updated_at: Date.now(),
+      },
+      supplier_score: 0,
+      distributor_score: 0,
+      craft_score: 0,
+      mid_sized_score: 0,
+      large_score: 0,
+      sales_focus_score: 0,
+      marketing_focus_score: 0,
+      operations_focus_score: 0,
+      compliance_focus_score: 0,
+      pain_points_detected: [],
+      pain_points_confidence: {
+        execution_blind_spot: 0,
+        market_assessment: 0,
+        sales_effectiveness: 0,
+        market_positioning: 0,
+        operational_challenge: 0,
+        regulatory_compliance: 0,
+      },
+      overall_confidence: 0,
+      total_interactions: 0,
+    };
+
+    const tracker = new SessionTracker(defaultPersona);
+    setSessionTracker(tracker);
+  }, []);
+
+  /**
+   * Scroll to the latest generated page
+   */
+  const scrollToLatestPage = () => {
+    if (lastPageRef.current) {
+      lastPageRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
+  /**
+   * Handle user message - Generate BOTH text response AND UI page
+   * @param query - The user's question
+   * @param context - Optional context (if from navigation/button click)
+   * @param isNavigationClick - If true, don't add messages to chat (silent navigation)
+   */
+  const handleSendMessage = async (query: string, context?: any, isNavigationClick: boolean = false) => {
+    setCurrentQuery(query);
+    setIsGenerating(true);
+    setLoadingProgress(0);
+
+    // Add user message to chat ONLY if it's not from navigation
+    if (!isNavigationClick) {
+      const userMessageId = `msg-${Date.now()}`;
+      setChatMessages(prev => [...prev, {
+        id: userMessageId,
+        role: 'user',
+        content: query,
+        timestamp: Date.now()
+      }]);
+
+      // Track this query for presentation generation
+      if (sessionTracker) {
+        sessionTracker.trackQuery(
+          query,
+          context?.source || 'chat',
+          'Generating solution...',
+          'BevGenie AI'
+        );
       }
     }
-  }, [messages]);
 
-  // If page+chat is open, show it
-  if (showPageWithChat) {
-    return (
-      <PageWithChatSidebar
-        page={currentPage || DEFAULT_DEMO_PAGE}
-        messages={messages}
-        isLoading={generationStatus.isGeneratingPage}
-        generationStatus={generationStatus}
-        onClose={() => {
-          setShowPageWithChat(false);
-          clearMessages();
-          setCurrentPage(null);
-        }}
-        onSendMessage={sendMessage}
-        onClearChat={() => {
-          clearMessages();
-          setCurrentPage(null);
-        }}
-      />
-    );
-  }
+    try {
+      // Call the real API endpoint with SSE streaming
+      const requestBody = context
+        ? { message: query, context, interactionSource: context.source }
+        : { message: query };
 
-  // Otherwise, show normal landing page with chat widget
+      console.log('[HomePage] Calling API with:', requestBody);
+
+      const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let generatedPage: BevGeniePage | null = null;
+      let textResponse = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const text = decoder.decode(value);
+          const lines = text.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              try {
+                const event = JSON.parse(data);
+
+                // Handle stage progress updates
+                if (event.stageId) {
+                  const stageProgress: Record<string, number> = {
+                    'init': 5,
+                    'intent': 15,
+                    'signals': 35,
+                    'knowledge': 55,
+                    'response': 75,
+                    'page': 90,
+                    'complete': 100,
+                  };
+                  setLoadingProgress(stageProgress[event.stageId] || 0);
+                }
+
+                // Handle text response chunks
+                if (event.text) {
+                  textResponse += event.text;
+                }
+
+                // Handle generated page
+                if (event.page) {
+                  generatedPage = event.page;
+                  console.log('[HomePage] Page received:', generatedPage.type);
+                }
+              } catch (e) {
+                // Skip non-JSON lines
+                console.debug('[HomePage] Skipping non-JSON line');
+              }
+            }
+          }
+        }
+      }
+
+      // Create new page entry
+      if (generatedPage) {
+        const pageId = `page-${Date.now()}`;
+        const newPage: PageHistoryItem = {
+          id: pageId,
+          query,
+          content: generatedPage,
+          textResponse: textResponse || `Here's what I found about "${query}"`,
+          timestamp: Date.now(),
+          context
+        };
+
+        // Add page to history (APPEND, don't replace!)
+        setPageHistory(prev => [...prev, newPage]);
+
+        // Add assistant text response to chat ONLY if it's not from navigation
+        if (!isNavigationClick && textResponse) {
+          setChatMessages(prev => [...prev, {
+            id: `msg-${Date.now()}`,
+            role: 'assistant',
+            content: textResponse,
+            timestamp: Date.now(),
+            pageId
+          }]);
+
+          // Update the tracker with the actual solution
+          if (sessionTracker) {
+            sessionTracker.updateLastQuery(
+              textResponse,
+              generatedPage?.type || 'BevGenie AI'
+            );
+          }
+        }
+
+        setIsGenerating(false);
+
+        // Scroll to new page after render
+        setTimeout(() => {
+          scrollToLatestPage();
+        }, 100);
+      } else {
+        console.warn('[HomePage] No page generated');
+        setIsGenerating(false);
+
+        // Only show error in chat if not from navigation
+        if (!isNavigationClick) {
+          setChatMessages(prev => [...prev, {
+            id: `msg-${Date.now()}`,
+            role: 'assistant',
+            content: 'Unable to generate a page at this time. Please try rephrasing your question.',
+            timestamp: Date.now()
+          }]);
+        }
+      }
+    } catch (error) {
+      console.error('[HomePage] Generation failed:', error);
+      setIsGenerating(false);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // Add error message to chat only if not from navigation
+      if (!isNavigationClick) {
+        setChatMessages(prev => [...prev, {
+          id: `msg-${Date.now()}`,
+          role: 'assistant',
+          content: `Sorry, I encountered an error: ${errorMessage}. Please try again.`,
+          timestamp: Date.now()
+        }]);
+      }
+    }
+  };
+
+  /**
+   * Handle back to home - Clear pages and return to landing page
+   */
+  const handleBackToHome = () => {
+    // Clear all generated pages
+    setPageHistory([]);
+    // Clear chat messages
+    setChatMessages([]);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /**
+   * Handle navigation click within a generated page
+   * These are silent - no chat messages added
+   */
+  const handleNavigationClick = (action: string, context?: any) => {
+    // Generate a new message based on the interaction
+    const interactionMessage = `${currentQuery} - User clicked on: ${context?.text || action}`;
+    // Pass true for isNavigationClick to keep it silent
+    handleSendMessage(interactionMessage, {
+      ...context,
+      source: action,
+      originalQuery: currentQuery,
+      pageIndex: pageHistory.length
+    }, true);
+  };
+
   return (
-    <main className="min-h-screen">
-      <Navigation />
-      <Hero />
-      <Challenges />
-      <DataPowered />
-      <Solutions />
-      <Footer />
-      <ChatWidget
-        onPageGenerated={() => {
-          setShowPageWithChat(true);
-          setCurrentPage(DEFAULT_DEMO_PAGE);
-        }}
+    <div className="relative" id="infinite-canvas">
+      {/* Loading Screen (Full Screen Overlay) */}
+      {isGenerating && (
+        <BevGenieVisualLoader
+          query={currentQuery}
+          onComplete={() => {
+            // Loader handles its own completion
+          }}
+        />
+      )}
+
+      {/* Landing Page - Show when no pages generated */}
+      {showLandingPage && (
+        <main className="min-h-screen">
+          <Navigation />
+          <Hero onCtaClick={(text) => handleSendMessage(`I want to ${text}`, { source: 'hero-cta', text })} />
+          <Challenges onCardClick={(title, description) => handleSendMessage(`Tell me more about ${title}: ${description}`, { source: 'challenges-card', title, description })} />
+          <DataPowered />
+          <Solutions
+            onCardClick={(title) => handleSendMessage(`Show me solutions for ${title}`, { source: 'solutions-card', category: title })}
+            onQuestionClick={(question, category) => handleSendMessage(question, { source: 'solutions-question', question, category })}
+          />
+          <Footer />
+        </main>
+      )}
+
+      {/* Generated Pages Stack - Vertical Scrolling */}
+      {pageHistory.length > 0 && (
+        <div id="generated-pages-stack">
+          {pageHistory.map((page, index) => (
+            <section
+              key={page.id}
+              id={page.id}
+              ref={index === pageHistory.length - 1 ? lastPageRef : null}
+              className="min-h-screen"
+              data-page-index={index}
+            >
+              <DynamicContent
+                specification={page.content}
+                onBackToHome={handleBackToHome}
+                onNavigationClick={handleNavigationClick}
+              />
+            </section>
+          ))}
+        </div>
+      )}
+
+      {/* Chat Bubble (Always visible) - Passes message history */}
+      <ChatBubble
+        onSendMessage={handleSendMessage}
+        isGenerating={isGenerating}
+        messages={chatMessages}
+        pageHistory={pageHistory}
       />
-    </main>
-  )
+
+      {/* Presentation Bubble - Generate personalized presentation */}
+      {sessionTracker && (
+        <PresentationBubble
+          tracker={sessionTracker}
+          onGenerate={() => {
+            console.log('[HomePage] Generating presentation...');
+          }}
+        />
+      )}
+    </div>
+  );
 }

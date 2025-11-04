@@ -1,4 +1,4 @@
-import { TrendingUp, Users } from "lucide-react"
+import { TrendingUp, Users, Search } from "lucide-react"
 
 const solutions = [
   {
@@ -25,46 +25,81 @@ const solutions = [
   },
 ]
 
-export function Solutions() {
+interface SolutionsProps {
+  onCardClick?: (title: string) => void;
+  onQuestionClick?: (question: string, category: string) => void;
+}
+
+export function Solutions({ onCardClick, onQuestionClick }: SolutionsProps) {
   return (
-    <section className="py-20 md:py-32 bg-[#EBEFF2]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 md:py-32 bg-gradient-to-b from-[#0A1930] to-[#000000] relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-[#0A1930] to-transparent z-[5]" />
+
+      <div className="absolute inset-0 opacity-8">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+            linear-gradient(to right, #00C8FF 1px, transparent 1px),
+            linear-gradient(to bottom, #00C8FF 1px, transparent 1px)
+          `,
+            backgroundSize: "80px 80px",
+          }}
+        />
+      </div>
+
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0A1930]/30 to-transparent z-[3]" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="font-display font-bold text-[#0A1930] text-3xl md:text-4xl lg:text-5xl mb-4">
+          <h2 className="font-display font-bold text-[#FFFFFF] text-3xl md:text-4xl lg:text-5xl mb-4">
             For teams who can't afford to guess
           </h2>
-          <p className="text-[#333333] text-lg md:text-xl max-w-4xl mx-auto leading-relaxed">
+          <p className="text-[#FFFFFF]/90 text-lg md:text-xl max-w-4xl mx-auto leading-relaxed">
             AI that delivers instant, trusted answers - grounded in mastered, multi-source industry data. Tailored,
             timely, and trustworthy, delivered when decisions matter most.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="space-y-8">
           {solutions.map((solution, index) => {
             const Icon = solution.icon
             return (
-              <div key={index} className="bg-[#FFFFFF] rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: `${solution.accentColor}20` }}>
-                    <Icon style={{ color: solution.accentColor }} size={28} />
+              <div
+                key={index}
+                className="bg-[#FFFFFF]/5 backdrop-blur-sm rounded-xl p-8 border-l-4 hover:bg-[#FFFFFF]/10 transition-all duration-300 cursor-pointer"
+                style={{ borderLeftColor: solution.accentColor }}
+                onClick={() => onCardClick?.(solution.title)}
+              >
+                <div className="flex flex-col md:flex-row gap-8">
+                  {/* Left side - Icon and title */}
+                  <div className="md:w-1/3 flex flex-col items-start">
+                    <div className="p-4 rounded-lg mb-4" style={{ backgroundColor: `${solution.accentColor}20` }}>
+                      <Icon style={{ color: solution.accentColor }} size={32} />
+                    </div>
+                    <h3 className="font-display font-semibold text-2xl text-[#FFFFFF] mb-2">{solution.title}</h3>
+                    <p className="text-[#FFFFFF]/80 font-medium">{solution.subtitle}</p>
                   </div>
-                  <h3 className="font-display font-semibold text-xl" style={{ color: solution.accentColor }}>
-                    {solution.title}
-                  </h3>
+
+                  <div className="md:w-2/3">
+                    <p className="font-display font-bold text-[#FFFFFF] text-lg mb-4">Ask:</p>
+                    <div className="space-y-3">
+                      {solution.questions.map((question, qIndex) => (
+                        <div
+                          key={qIndex}
+                          className="flex items-center gap-3 bg-[#FFFFFF]/10 rounded-full px-6 py-4 border border-[#FFFFFF]/20 hover:border-[#FFFFFF]/40 transition-all duration-300 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onQuestionClick?.(question, solution.title);
+                          }}
+                        >
+                          <Search style={{ color: solution.accentColor }} size={20} className="flex-shrink-0" />
+                          <span className="text-[#FFFFFF]/90 leading-relaxed flex-1">{question}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-
-                <p className="text-[#0A1930] font-semibold mb-6">{solution.subtitle}</p>
-
-                <ul className="space-y-4">
-                  {solution.questions.map((question, qIndex) => (
-                    <li key={qIndex} className="flex items-start gap-3 text-[#333333] leading-relaxed">
-                      <span className="mt-1 font-bold" style={{ color: solution.accentColor }}>
-                        •
-                      </span>
-                      <span>"{question}"</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             )
           })}

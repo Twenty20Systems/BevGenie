@@ -191,8 +191,30 @@ export function DataPowered() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="py-20 md:py-32 bg-[#0A1930] relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      ref={sectionRef}
+      className="py-20 md:py-32 bg-gradient-to-b from-[#0A1930] to-[#000000] relative overflow-hidden"
+    >
+      <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-[#0A1930] to-transparent z-[5]" />
+
+      <div className="absolute inset-0 opacity-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+            linear-gradient(to right, #00C8FF 1px, transparent 1px),
+            linear-gradient(to bottom, #00C8FF 1px, transparent 1px)
+          `,
+            backgroundSize: "80px 80px",
+          }}
+        />
+      </div>
+
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0A1930]/30 to-transparent z-[3]" />
+
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#000000] to-transparent z-[5]" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <h2 className="font-display font-bold text-[#FFFFFF] text-3xl md:text-4xl lg:text-5xl mb-6">
             Powered by Data. Designed for Decisions.
@@ -206,8 +228,8 @@ export function DataPowered() {
 
         <div ref={containerRef} className="relative max-w-[1200px] mx-auto">
           <svg
-            className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block"
-            style={{ zIndex: 10 }}
+            className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block overflow-visible"
+            style={{ zIndex: 15 }}
             aria-hidden="true"
           >
             <defs>
@@ -238,19 +260,19 @@ export function DataPowered() {
                     stroke="url(#wireGrad)"
                     strokeWidth="2"
                     fill="none"
-                    opacity="0.4"
+                    opacity="0.6"
                     filter="url(#glow)"
                   />
                   {isVisible && (
                     <circle r="5" fill="url(#dotGlow)" filter="url(#glow)">
-                      <animateMotion dur="3s" repeatCount="indefinite" begin={isLeftSide ? "0s" : "3s"}>
+                      <animateMotion dur="2.5s" repeatCount="indefinite" begin={isLeftSide ? "0s" : "2.5s"}>
                         <mpath href={`#path-${conn.id}`} />
                       </animateMotion>
                       <animate
                         attributeName="opacity"
                         values={isLeftSide ? "1;1;0;0" : "0;0;1;1"}
-                        keyTimes="0;0.45;0.5;1"
-                        dur="6s"
+                        keyTimes={isLeftSide ? "0;0.48;0.5;1" : "0;0.5;0.5;1"}
+                        dur="5s"
                         repeatCount="indefinite"
                       />
                     </circle>
@@ -261,7 +283,7 @@ export function DataPowered() {
             })}
           </svg>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-center relative" style={{ zIndex: 1 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-center relative" style={{ zIndex: 16 }}>
             <div className="lg:col-span-4">
               <div className="rounded-xl border border-[#FFFFFF]/10 bg-[#FFFFFF]/5 backdrop-blur-sm p-6 min-h-[520px] flex flex-col">
                 <h3 className="font-display text-xl font-semibold text-[#FFFFFF] mb-2">Unified Data Foundation</h3>

@@ -25,7 +25,11 @@ const challenges = [
   },
 ]
 
-export function Challenges() {
+interface ChallengesProps {
+  onCardClick?: (title: string, description: string) => void;
+}
+
+export function Challenges({ onCardClick }: ChallengesProps) {
   return (
     <section className="py-20 md:py-32 bg-[#EBEFF2]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,7 +43,11 @@ export function Challenges() {
           {challenges.map((challenge, index) => {
             const Icon = challenge.icon
             return (
-              <div key={index} className="bg-[#FFFFFF] rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow">
+              <div
+                key={index}
+                className="bg-[#FFFFFF] rounded-lg p-8 shadow-sm hover:shadow-md transition-all cursor-pointer hover:-translate-y-1"
+                onClick={() => onCardClick?.(challenge.title, challenge.problem)}
+              >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-[#DA1E28]/10 rounded-lg">
                     <Icon className="text-[#DA1E28]" size={24} />
