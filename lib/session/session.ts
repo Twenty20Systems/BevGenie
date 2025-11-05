@@ -342,8 +342,8 @@ export async function addConversationMessage(
     if (error) {
       console.error('Error adding conversation message:', error);
     } else {
-      // Update last message
-      session.user.lastMessage = content;
+      // Update last message (truncate to 50 chars to reduce cookie size)
+      session.user.lastMessage = content.substring(0, 50);
       session.user.lastMessageAt = Date.now();
       session.user.messageCount += 1;
       await session.save();

@@ -36,23 +36,23 @@ export interface PainPointDetails {
 export interface PersonaDetectionVectors {
   // Vector 1: Functional Role (Sales, Marketing)
   functional_role: 'sales' | 'marketing' | null;
-  functional_role_confidence: number; // 0.0 - 1.0
-  functional_role_history: Array<{ role: string; confidence: number; timestamp: number }>;
+  functional_role_confidence: number; // 0-100
+  functional_role_history: string[]; // Simplified: just store role names (max 5)
 
   // Vector 2: Org Type (Supplier, Retailer)
   org_type: 'supplier' | 'retailer' | null;
-  org_type_confidence: number; // 0.0 - 1.0
-  org_type_history: Array<{ type: string; confidence: number; timestamp: number }>;
+  org_type_confidence: number; // 0-100
+  org_type_history: string[]; // Simplified: just store type names (max 5)
 
   // Vector 3: Org Size (S, M, L)
   org_size: 'S' | 'M' | 'L' | null;
-  org_size_confidence: number; // 0.0 - 1.0
-  org_size_history: Array<{ size: string; confidence: number; timestamp: number }>;
+  org_size_confidence: number; // 0-100
+  org_size_history: string[]; // Simplified: just store size names (max 5)
 
   // Vector 4: Product Focus (Beer, Spirits, Wine)
   product_focus: 'beer' | 'spirits' | 'wine' | null;
-  product_focus_confidence: number; // 0.0 - 1.0
-  product_focus_history: Array<{ product: string; confidence: number; timestamp: number }>;
+  product_focus_confidence: number; // 0-100
+  product_focus_history: string[]; // Simplified: just store product names (max 5)
 
   // Last Updated
   vectors_updated_at: number; // Unix timestamp

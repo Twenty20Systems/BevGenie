@@ -99,6 +99,31 @@ export interface StepsSection {
   timeline?: string; // e.g., "90 days"
 }
 
+export interface SingleScreenSection {
+  type: 'single_screen';
+  headline: string;
+  subtitle: string;
+  insights: Array<{ text: string }>;
+  stats: Array<{
+    value: string;
+    label: string;
+  }>;
+  visualContent: {
+    type: 'highlight_box' | 'case_study' | 'example';
+    title: string;
+    content: string;
+    highlight?: string;
+  };
+  howItWorks?: string[];
+  ctas: Array<{
+    text: string;
+    type: 'primary' | 'secondary' | 'tertiary';
+    action: 'form' | 'new_section' | 'chat' | 'explore';
+    submissionType?: 'demo' | 'consultation' | 'case_study' | 'contact' | 'newsletter' | 'download';
+    context?: any;
+  }>;
+}
+
 /**
  * Union type for all possible sections
  */
@@ -110,7 +135,8 @@ export type PageSection =
   | CTASection
   | FAQSection
   | MetricsSection
-  | StepsSection;
+  | StepsSection
+  | SingleScreenSection;
 
 /**
  * Page type definitions
@@ -300,6 +326,16 @@ export const VALIDATION_RULES = {
     maxSteps: 10,
     title: { minLength: 5, maxLength: 50 },
     description: { minLength: 10, maxLength: 200 },
+  },
+  single_screen: {
+    headline: { minLength: 20, maxLength: 60 },
+    subtitle: { minLength: 20, maxLength: 50 },
+    minInsights: 3,
+    maxInsights: 4,
+    minStats: 3,
+    maxStats: 3,
+    minCTAs: 2,
+    maxCTAs: 3,
   },
 };
 
@@ -505,6 +541,21 @@ function validateSection(section: PageSection): string[] {
       }
       break;
 
+    case 'single_screen':
+      const singleScreen = section as any;
+      if (!singleScreen.headline || !singleScreen.subtitle) {
+        errors.push('Missing headline or subtitle');
+      }
+      if (!singleScreen.insights || singleScreen.insights.length < 3) {
+        errors.push('Too few insights (min 3)');
+      }
+      if (!singleScreen.stats || singleScreen.stats.length < 3) {
+        errors.push('Too few stats (min 3)');
+      }
+      if (!singleScreen.ctas || singleScreen.ctas.length < 2) {
+        errors.push('Too few CTAs (min 2)');
+      }
+      break;
   }
 
   return errors;

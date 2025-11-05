@@ -42,7 +42,6 @@ export function SimpleLoader({ query, onComplete }: SimpleLoaderProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center pb-32" style={{
-      backgroundColor: 'rgba(10, 22, 40, 0.3)',
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)'
     }}>

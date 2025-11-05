@@ -11,6 +11,7 @@ import { ChatBubble } from '@/components/genie/chat-bubble';
 import { SimpleLoader } from '@/components/genie/simple-loader';
 import { DynamicContent } from '@/components/genie/dynamic-content';
 import { PresentationBubble } from '@/components/genie/presentation-bubble';
+import { ProfileModal } from '@/components/profile-modal';
 import type { BevGeniePage } from '@/lib/ai/page-specs';
 import { SessionTracker } from '@/lib/session/session-tracker';
 import type { PersonaScores } from '@/lib/session/types';
@@ -51,6 +52,9 @@ export default function HomePage() {
 
   // Session Tracker for presentation generation
   const [sessionTracker, setSessionTracker] = useState<SessionTracker | null>(null);
+
+  // Profile modal state
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Ref for scrolling to newly generated pages
   const lastPageRef = useRef<HTMLDivElement>(null);
@@ -209,6 +213,16 @@ export default function HomePage() {
                   generatedPage = event.page;
                   console.log('[HomePage] Page received:', generatedPage.type);
                 }
+
+                // Handle persona updates from backend (from 'complete' event)
+                if (event.session?.persona && sessionTracker) {
+                  console.log('[HomePage] Received persona update from backend:', event.session.persona);
+                  sessionTracker.updatePersona(event.session.persona);
+                  // Force re-render by creating a new tracker instance
+                  const updatedTracker = Object.create(Object.getPrototypeOf(sessionTracker));
+                  Object.assign(updatedTracker, sessionTracker);
+                  setSessionTracker(updatedTracker);
+                }
               } catch (e) {
                 // Skip non-JSON lines
                 console.debug('[HomePage] Skipping non-JSON line');
@@ -317,6 +331,19 @@ export default function HomePage() {
     }, true);
   };
 
+  /**
+   * Handle persona updates from profile modal
+   */
+  const handleUpdatePersona = (updates: Partial<PersonaScores>) => {
+    if (sessionTracker) {
+      sessionTracker.updatePersona(updates);
+      // Force re-render by creating a new tracker reference with updated persona
+      const updatedTracker = Object.create(Object.getPrototypeOf(sessionTracker));
+      Object.assign(updatedTracker, sessionTracker);
+      setSessionTracker(updatedTracker);
+    }
+  };
+
   return (
     <div className="relative snap-y snap-mandatory overflow-y-auto h-screen scroll-smooth" id="infinite-canvas">
       {/* Loading Screen - Simple Blinking Text */}
@@ -332,7 +359,7 @@ export default function HomePage() {
       {/* Landing Page - Show when no pages generated - SINGLE SCREEN */}
       {showLandingPage && (
         <main className="h-screen overflow-hidden snap-start">
-          <Navigation />
+          <Navigation onProfileClick={() => setIsProfileOpen(true)} />
           <Hero onCtaClick={(text) => handleSendMessage(`I want to ${text}`, { source: 'hero-cta', text })} />
         </main>
       )}
@@ -343,7 +370,7 @@ export default function HomePage() {
           {/* Show homepage first when there are generated pages */}
           {!showLandingPage && (
             <div className="h-screen overflow-hidden snap-start">
-              <Navigation />
+              <Navigation onProfileClick={() => setIsProfileOpen(true)} />
               <Hero onCtaClick={(text) => handleSendMessage(`I want to ${text}`, { source: 'hero-cta', text })} />
             </div>
           )}
@@ -386,6 +413,14 @@ export default function HomePage() {
           }}
         />
       )}
+
+      {/* Profile Modal - View and edit persona */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        persona={sessionTracker?.getPersona() || null}
+        onUpdatePersona={handleUpdatePersona}
+      />
     </div>
   );
 }

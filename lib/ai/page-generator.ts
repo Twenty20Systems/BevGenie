@@ -188,17 +188,114 @@ Your task is to generate a professional ${request.pageType} page specification t
 Page Type: ${request.pageType}
 ${template}
 
+⚠️⚠️⚠️ CRITICAL: USE SINGLE-SCREEN FORMAT ⚠️⚠️⚠️
+
+ALL pages MUST use the single_screen section format. This is the ONLY acceptable format.
+The single_screen format provides a complete, modern answer in exactly one screen (100vh, non-scrollable).
+
+Your "sections" array MUST contain EXACTLY ONE object with type: "single_screen"
+
 CRITICAL REQUIREMENTS:
-1. Output ONLY valid JSON that matches the BevGeniePage schema
-2. Do NOT include markdown formatting, code blocks, or explanations - output JSON only
-3. Ensure all required fields are present and complete
-4. Follow the character limits specified in validation rules
-5. Create DETAILED, SPECIFIC, and PROFESSIONAL content for the beverage industry
-6. Include concrete metrics, data points, and industry-specific insights from the knowledge base
-7. Make headlines compelling and subheadlines supporting - not redundant
-8. Create action-oriented CTAs with clear business value
-9. Structure content to flow logically from problem → insight → solution → action
-10. Use professional B2B SaaS language appropriate for C-suite executives and department heads
+1. ⚠️ MANDATORY: Your "sections" array MUST contain EXACTLY ONE object with type: "single_screen"
+2. Output ONLY valid JSON that matches the BevGeniePage schema
+3. Do NOT include markdown formatting, code blocks, or explanations - output JSON only
+4. Ensure all required fields are present and complete
+5. Follow the character limits specified in validation rules
+6. Create DETAILED, SPECIFIC, and PROFESSIONAL content for the beverage industry
+7. Include concrete metrics, data points, and industry-specific insights from the knowledge base
+8. Make headlines compelling and subheadlines supporting - not redundant
+9. Create action-oriented CTAs with clear business value
+10. Structure content to flow logically from problem → insight → solution → action
+11. Use professional B2B SaaS language appropriate for C-suite executives and department heads
+
+⚠️ CONTENT GENERATION REQUIREMENTS - COMPREHENSIVE & INFORMATIVE:
+
+Your single-screen sections MUST answer the user's query COMPLETELY within one viewport.
+Each section is INFORMATION-RICH with specific, actionable insights.
+
+SINGLE-SCREEN SECTION FORMAT:
+{
+  "type": "single_screen",
+  "headline": "Clear, Benefit-Driven Title (20-60 chars)" - Focus on the VALUE, not feature name
+  "subtitle": "Specific Context (20-50 chars)" - MUST be specific to user's query. Examples: "Velocity Analysis for Beer Brands" or "Market Expansion Strategy". NEVER use: "Solution Brief", "BevGenie Solution", or generic terms.
+
+  "insights": [
+    {
+      "text": "DETAILED insight with specific mechanism. Example: 'Velocity Shift Detection: Our AI identifies 15-30% more sales opportunities by analyzing campaign velocity shifts across your distribution network that traditional analytics miss.'"
+    },
+    {
+      "text": "ACTIONABLE insight with clear benefit. Example: 'Market Pattern Recognition: Intelligent algorithms recognize emerging patterns in real-time, allowing you to capitalize on opportunities 3-4 weeks faster than competitors.'"
+    },
+    {
+      "text": "OUTCOME-focused insight with numbers. Example: 'Automated Revenue Strategies: AI converts market data into specific sales actions, increasing conversion rates by 2.5x on average.'"
+    },
+    {
+      "text": "FOURTH insight connecting to their business (optional). Each insight should be 2-3 complete sentences with data."
+    }
+  ],
+
+  "stats": [
+    {
+      "value": "15-30%",
+      "label": "More Sales Opportunities",
+      "description": "Than traditional methods" (optional)
+    },
+    {
+      "value": "3-4 wks",
+      "label": "Faster Market Response",
+      "description": "Before competitors" (optional)
+    },
+    {
+      "value": "2.5x",
+      "label": "Conversion Rate Boost",
+      "description": "Average improvement" (optional)
+    }
+  ],
+
+  "visualContent": {
+    "type": "case_study" OR "highlight_box" OR "example",
+    "title": "Real-World Impact" OR "How This Helps You" OR "Industry Example",
+    "content": "DETAILED narrative (3-5 sentences). For case_study: tell a specific story with company type, challenge, solution, and outcome. For highlight_box: explain the mechanism in detail. For example: show a concrete scenario.",
+    "highlight": "KEY RESULT with numbers. Example: '$2.3M additional revenue in Q4 by targeting 12 previously overlooked accounts'"
+  },
+
+  "howItWorks": [
+    "Connect your campaign and sales data seamlessly",
+    "AI analyzes velocity patterns across all markets",
+    "Receive prioritized opportunity alerts weekly",
+    "Get specific account recommendations with reasoning",
+    "Track ROI on every acted opportunity"
+  ] (3-5 specific, actionable steps),
+
+  "ctas": [
+    {
+      "text": "Schedule Opportunity Analysis",
+      "type": "primary",
+      "action": "form",
+      "submissionType": "demo"
+    },
+    {
+      "text": "View Case Studies",
+      "type": "secondary",
+      "action": "new_section",
+      "context": { "topic": "success_stories", "related_to": "headline" }
+    },
+    {
+      "text": "Explore [Related Topic]",
+      "type": "secondary",
+      "action": "new_section",
+      "context": { "topic": "..." }
+    }
+  ] (Always provide 3 CTAs with diverse actions)
+}
+
+CRITICAL CONTENT RULES:
+1. ANSWER THE QUESTION FULLY - Don't be vague. Provide specific mechanisms, numbers, and outcomes
+2. BE CONCRETE - Use real industry data, specific percentages, timeframes, dollar amounts
+3. SHOW VALUE - Every insight must connect to business impact (revenue, time, efficiency)
+4. USE BEVERAGE INDUSTRY CONTEXT - Reference specific categories (spirits, beer, wine), distributor challenges, market dynamics
+5. MAKE IT SCANNABLE - Each insight is self-contained, stats are large and clear
+6. PROVIDE NEXT ACTIONS - 3 different CTAs for different user intents (demo, learn more, explore related)
 
 DESIGN & VISUAL REQUIREMENTS - BEVGENIE DESIGN SYSTEM:
 The generated pages will use BevGenie's modern design system with production-ready styling:

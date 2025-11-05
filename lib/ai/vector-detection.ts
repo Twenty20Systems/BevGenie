@@ -449,11 +449,11 @@ export function updateDetectionVectors(
 
         updated.functional_role = maxValue as any;
         updated.functional_role_confidence = Math.min(1.0, updated.functional_role_confidence + avgConfidence * 0.15);
-        updated.functional_role_history.push({
-          role: maxValue,
-          confidence: avgConfidence,
-          timestamp: now,
-        });
+        updated.functional_role_history.push(maxValue);
+        // Keep only last 5 entries to reduce cookie size
+        if (updated.functional_role_history.length > 5) {
+          updated.functional_role_history.shift();
+        }
         break;
       }
 
@@ -479,11 +479,11 @@ export function updateDetectionVectors(
 
         updated.org_type = maxValue as any;
         updated.org_type_confidence = Math.min(1.0, updated.org_type_confidence + avgConfidence * 0.15);
-        updated.org_type_history.push({
-          type: maxValue,
-          confidence: avgConfidence,
-          timestamp: now,
-        });
+        updated.org_type_history.push(maxValue);
+        // Keep only last 5 entries to reduce cookie size
+        if (updated.org_type_history.length > 5) {
+          updated.org_type_history.shift();
+        }
         break;
       }
 
@@ -509,11 +509,11 @@ export function updateDetectionVectors(
 
         updated.org_size = maxValue as any;
         updated.org_size_confidence = Math.min(1.0, updated.org_size_confidence + avgConfidence * 0.15);
-        updated.org_size_history.push({
-          size: maxValue,
-          confidence: avgConfidence,
-          timestamp: now,
-        });
+        updated.org_size_history.push(maxValue);
+        // Keep only last 5 entries to reduce cookie size
+        if (updated.org_size_history.length > 5) {
+          updated.org_size_history.shift();
+        }
         break;
       }
 
@@ -539,11 +539,11 @@ export function updateDetectionVectors(
 
         updated.product_focus = maxValue as any;
         updated.product_focus_confidence = Math.min(1.0, updated.product_focus_confidence + avgConfidence * 0.15);
-        updated.product_focus_history.push({
-          product: maxValue,
-          confidence: avgConfidence,
-          timestamp: now,
-        });
+        updated.product_focus_history.push(maxValue);
+        // Keep only last 5 entries to reduce cookie size
+        if (updated.product_focus_history.length > 5) {
+          updated.product_focus_history.shift();
+        }
         break;
       }
     }

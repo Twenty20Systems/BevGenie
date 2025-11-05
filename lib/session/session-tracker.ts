@@ -75,6 +75,9 @@ export class SessionTracker {
       solutionProvided,
       featureUsed,
     });
+
+    // Note: Confidence updates are handled by backend via detectAndUpdateVectors()
+    // Frontend just syncs the persona via SSE events from the API
   }
 
   /**
@@ -108,6 +111,182 @@ export class SessionTracker {
       if (pattern.test(query)) return category;
     }
     return 'General Inquiry';
+  }
+
+  /**
+   * Update confidence scores based on query patterns
+   */
+  private updateConfidenceFromQuery(query: string) {
+    const lowerQuery = query.toLowerCase();
+
+    // Detect functional role signals
+    const roleSignals = {
+      sales: /sales|revenue|quota|territory|account|pipeline|deal|prospect|customer relationship|crm/i,
+      marketing: /campaign|marketing|brand|promotion|advertising|content|social media|awareness|positioning/i,
+      operations: /supply chain|logistics|inventory|warehouse|distribution|operations|efficiency|production/i,
+      compliance: /compliance|regulatory|audit|license|legal|regulation|law|permit|ttb/i,
+      executive: /strategy|growth|expansion|investment|board|shareholder|roi|profit|market share/i,
+    };
+
+    for (const [role, pattern] of Object.entries(roleSignals)) {
+      if (pattern.test(lowerQuery)) {
+        this.incrementVectorConfidence('functional_role', role, 5);
+        this.addToHistory('functional_role', role);
+      }
+    }
+
+    // Detect organization type signals
+    const orgTypeSignals = {
+      supplier: /supplier|manufacturer|brewing|winery|distillery|production|our brand|our product line/i,
+      distributor: /distributor|wholesaler|portfolio|accounts|retailers|on-premise|off-premise/i,
+      craft: /craft|small batch|local|artisan|independent|microbrewery/i,
+    };
+
+    for (const [type, pattern] of Object.entries(orgTypeSignals)) {
+      if (pattern.test(lowerQuery)) {
+        this.incrementVectorConfidence('org_type', type, 5);
+        this.addToHistory('org_type', type);
+      }
+    }
+
+    // Detect organization size signals
+    const orgSizeSignals = {
+      small: /small|startup|growing|limited resources|local market/i,
+      mid: /regional|expanding|multi-state|mid-sized|growing team/i,
+      large: /national|enterprise|multi-regional|large scale|nationwide/i,
+    };
+
+    for (const [size, pattern] of Object.entries(orgSizeSignals)) {
+      if (pattern.test(lowerQuery)) {
+        this.incrementVectorConfidence('org_size', size, 5);
+        this.addToHistory('org_size', size);
+      }
+    }
+
+    // Detect product focus
+    const productSignals = {
+      beer: /beer|ale|lager|ipa|stout|brewery|brewing/i,
+      wine: /wine|vineyard|winery|vintage|varietal/i,
+      spirits: /spirits|whiskey|vodka|gin|rum|distillery/i,
+      mixed: /portfolio|multiple categories|diverse|various products/i,
+    };
+
+    for (const [product, pattern] of Object.entries(productSignals)) {
+      if (pattern.test(lowerQuery)) {
+        this.incrementVectorConfidence('product_focus', product, 5);
+        this.addToHistory('product_focus', product);
+      }
+    }
+
+    // Detect pain points
+    const painPointSignals = {
+      execution_blind_spot: /dont know|unclear|visibility|blind spot|whats happening|status/i,
+      market_assessment: /market|opportunity|potential|assessment|analysis/i,
+      sales_effectiveness: /sales effectiveness|conversion|close rate|win rate|sales performance/i,
+      market_positioning: /positioning|competitive|differentiation|market share/i,
+      operational_challenge: /operations|efficiency|process|workflow|challenge/i,
+      regulatory_compliance: /compliance|regulatory|audit|license|legal/i,
+    };
+
+    for (const [painPoint, pattern] of Object.entries(painPointSignals)) {
+      if (pattern.test(lowerQuery)) {
+        this.incrementPainPointConfidence(painPoint, 3);
+        if (!this.persona.pain_points_detected.includes(painPoint)) {
+          this.persona.pain_points_detected.push(painPoint);
+        }
+      }
+    }
+  }
+
+  /**
+   * Increment confidence for a detection vector
+   */
+  private incrementVectorConfidence(vectorName: string, value: string, increment: number) {
+    const vectors = this.persona.detection_vectors;
+
+    if (vectorName === 'functional_role') {
+      if (vectors.functional_role === value || vectors.functional_role === null) {
+        vectors.functional_role = value;
+        vectors.functional_role_confidence = Math.min(100, vectors.functional_role_confidence + increment);
+      }
+    } else if (vectorName === 'org_type') {
+      if (vectors.org_type === value || vectors.org_type === null) {
+        vectors.org_type = value;
+        vectors.org_type_confidence = Math.min(100, vectors.org_type_confidence + increment);
+      }
+    } else if (vectorName === 'org_size') {
+      if (vectors.org_size === value || vectors.org_size === null) {
+        vectors.org_size = value;
+        vectors.org_size_confidence = Math.min(100, vectors.org_size_confidence + increment);
+      }
+    } else if (vectorName === 'product_focus') {
+      if (vectors.product_focus === value || vectors.product_focus === null) {
+        vectors.product_focus = value;
+        vectors.product_focus_confidence = Math.min(100, vectors.product_focus_confidence + increment);
+      }
+    }
+
+    vectors.vectors_updated_at = Date.now();
+  }
+
+  /**
+   * Add value to history for a detection vector
+   */
+  private addToHistory(vectorName: string, value: string) {
+    const vectors = this.persona.detection_vectors;
+    const maxHistorySize = 5; // Reduced from 10 to minimize cookie size
+
+    if (vectorName === 'functional_role') {
+      vectors.functional_role_history.push(value);
+      if (vectors.functional_role_history.length > maxHistorySize) {
+        vectors.functional_role_history.shift();
+      }
+    } else if (vectorName === 'org_type') {
+      vectors.org_type_history.push(value);
+      if (vectors.org_type_history.length > maxHistorySize) {
+        vectors.org_type_history.shift();
+      }
+    } else if (vectorName === 'org_size') {
+      vectors.org_size_history.push(value);
+      if (vectors.org_size_history.length > maxHistorySize) {
+        vectors.org_size_history.shift();
+      }
+    } else if (vectorName === 'product_focus') {
+      vectors.product_focus_history.push(value);
+      if (vectors.product_focus_history.length > maxHistorySize) {
+        vectors.product_focus_history.shift();
+      }
+    }
+  }
+
+  /**
+   * Increment confidence for a pain point
+   */
+  private incrementPainPointConfidence(painPoint: string, increment: number) {
+    const currentConfidence = (this.persona.pain_points_confidence as any)[painPoint] || 0;
+    (this.persona.pain_points_confidence as any)[painPoint] = Math.min(100, currentConfidence + increment);
+  }
+
+  /**
+   * Recalculate overall confidence based on all vectors
+   */
+  private recalculateOverallConfidence() {
+    const vectors = this.persona.detection_vectors;
+    const confidences = [
+      vectors.functional_role_confidence,
+      vectors.org_type_confidence,
+      vectors.org_size_confidence,
+      vectors.product_focus_confidence,
+    ];
+
+    const validConfidences = confidences.filter(c => c > 0);
+    if (validConfidences.length === 0) {
+      this.persona.overall_confidence = 0;
+    } else {
+      this.persona.overall_confidence = Math.round(
+        validConfidences.reduce((sum, c) => sum + c, 0) / validConfidences.length
+      );
+    }
   }
 
   /**
@@ -320,5 +499,19 @@ export class SessionTracker {
     tracker.queries = data.queries || [];
     tracker.sessionStart = data.sessionStart;
     return tracker;
+  }
+
+  /**
+   * Get current persona
+   */
+  getPersona(): PersonaScores {
+    return this.persona;
+  }
+
+  /**
+   * Update persona with new values (from backend or manual edits)
+   */
+  updatePersona(updates: Partial<PersonaScores>) {
+    this.persona = { ...this.persona, ...updates };
   }
 }
