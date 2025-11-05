@@ -63,7 +63,6 @@ export function ChatBubble({
           aria-label="Open BevGenie AI Chat"
         >
           <MessageCircle className="w-7 h-7 text-white" />
-          <div className="absolute inset-0 rounded-full border-4 border-[#00C8FF] animate-ping opacity-75" />
           {messages.length > 0 && (
             <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
               {messages.length}

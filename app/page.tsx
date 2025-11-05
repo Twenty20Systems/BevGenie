@@ -8,7 +8,7 @@ import { DataPowered } from "@/components/data-powered"
 import { Solutions } from "@/components/solutions"
 import { Footer } from "@/components/footer"
 import { ChatBubble } from '@/components/genie/chat-bubble';
-import { BevGenieVisualLoader } from '@/components/genie/loading-screen';
+import { SimpleLoader } from '@/components/genie/simple-loader';
 import { DynamicContent } from '@/components/genie/dynamic-content';
 import { PresentationBubble } from '@/components/genie/presentation-bubble';
 import type { BevGeniePage } from '@/lib/ai/page-specs';
@@ -318,10 +318,10 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative" id="infinite-canvas">
-      {/* Loading Screen (Full Screen Overlay) */}
+    <div className="relative snap-y snap-mandatory overflow-y-auto h-screen scroll-smooth" id="infinite-canvas">
+      {/* Loading Screen - Simple Blinking Text */}
       {isGenerating && (
-        <BevGenieVisualLoader
+        <SimpleLoader
           query={currentQuery}
           onComplete={() => {
             // Loader handles its own completion
@@ -329,40 +329,44 @@ export default function HomePage() {
         />
       )}
 
-      {/* Landing Page - Show when no pages generated */}
+      {/* Landing Page - Show when no pages generated - SINGLE SCREEN */}
       {showLandingPage && (
-        <main className="min-h-screen">
+        <main className="h-screen overflow-hidden snap-start">
           <Navigation />
           <Hero onCtaClick={(text) => handleSendMessage(`I want to ${text}`, { source: 'hero-cta', text })} />
-          <Challenges onCardClick={(title, description) => handleSendMessage(`Tell me more about ${title}: ${description}`, { source: 'challenges-card', title, description })} />
-          <DataPowered />
-          <Solutions
-            onCardClick={(title) => handleSendMessage(`Show me solutions for ${title}`, { source: 'solutions-card', category: title })}
-            onQuestionClick={(question, category) => handleSendMessage(question, { source: 'solutions-question', question, category })}
-          />
-          <Footer />
         </main>
       )}
 
-      {/* Generated Pages Stack - Vertical Scrolling */}
+      {/* Generated Pages Stack - Vertical Scrolling with Snap Points */}
       {pageHistory.length > 0 && (
-        <div id="generated-pages-stack">
-          {pageHistory.map((page, index) => (
-            <section
-              key={page.id}
-              id={page.id}
-              ref={index === pageHistory.length - 1 ? lastPageRef : null}
-              className="min-h-screen"
-              data-page-index={index}
-            >
-              <DynamicContent
-                specification={page.content}
-                onBackToHome={handleBackToHome}
-                onNavigationClick={handleNavigationClick}
-              />
-            </section>
-          ))}
-        </div>
+        <>
+          {/* Show homepage first when there are generated pages */}
+          {!showLandingPage && (
+            <div className="h-screen overflow-hidden snap-start">
+              <Navigation />
+              <Hero onCtaClick={(text) => handleSendMessage(`I want to ${text}`, { source: 'hero-cta', text })} />
+            </div>
+          )}
+
+          {/* Generated pages */}
+          <div id="generated-pages-stack">
+            {pageHistory.map((page, index) => (
+              <section
+                key={page.id}
+                id={page.id}
+                ref={index === pageHistory.length - 1 ? lastPageRef : null}
+                className="snap-start h-screen overflow-hidden"
+                data-page-index={index}
+              >
+                <DynamicContent
+                  specification={page.content}
+                  onBackToHome={handleBackToHome}
+                  onNavigationClick={handleNavigationClick}
+                />
+              </section>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Chat Bubble (Always visible) - Passes message history */}
