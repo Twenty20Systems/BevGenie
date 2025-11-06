@@ -87,9 +87,10 @@ export async function searchKnowledgeBase(
       query_text: query,
       query_embedding: queryEmbedding,
       filter_personas: personaTags || [],
-      filter_pain_points: painPointTags || [],
       match_count: limit,
     });
+
+    // Note: filter_pain_points removed - not supported by DB function
 
     if (error) {
       console.error('Error in hybrid search:', error);

@@ -339,20 +339,16 @@ async function processStreamWithController(
       progress: 95,
     });
 
-    // Save to history (batch operation for better performance)
-    try {
-      await addConversationMessagesBatch([
-        { role: 'user', content: message, generationMode: 'fresh' },
-        { role: 'assistant', content: aiResponse, generationMode: 'fresh' }
-      ]);
-    } catch (e) {
-      console.error('Save error:', e);
-    }
-    perfTime = perfLog('History save (batch)', perfTime);
+    // Save to history in background (non-blocking for faster response!)
+    addConversationMessagesBatch([
+      { role: 'user', content: message, generationMode: 'fresh' },
+      { role: 'assistant', content: aiResponse, generationMode: 'fresh' }
+    ]).catch(e => console.error('Background history save error:', e));
 
-    // Update persona
-    await updatePersona(updatedPersona);
-    perfTime = perfLog('Persona update', perfTime);
+    // Update persona in background (non-blocking)
+    updatePersona(updatedPersona).catch(e => console.error('Background persona update error:', e));
+
+    console.log('[PERF] History and persona saves running in background (non-blocking)');
 
     // Complete event
     sendEvent('complete', {

@@ -12,6 +12,31 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// In-memory cache for embeddings (no external dependencies needed!)
+// Key: normalized text, Value: { embedding, timestamp }
+const embeddingCache = new Map<string, { embedding: number[]; timestamp: number }>();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour cache
+const MAX_CACHE_SIZE = 1000; // Prevent memory bloat
+
+/**
+ * Normalize text for cache key (lowercase, trim, remove extra spaces)
+ */
+function normalizeCacheKey(text: string): string {
+  return text.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+/**
+ * Clear expired cache entries
+ */
+function cleanCache(): void {
+  const now = Date.now();
+  for (const [key, value] of embeddingCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      embeddingCache.delete(key);
+    }
+  }
+}
+
 /**
  * Generate embedding for a text string
  *
@@ -32,6 +57,19 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     throw new Error('OPENAI_API_KEY environment variable is not set');
   }
 
+  // Check cache first
+  const cacheKey = normalizeCacheKey(text);
+  const cached = embeddingCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log('[CACHE HIT] Embedding cache hit - saved 300-500ms!');
+    return cached.embedding;
+  }
+
+  // Clean cache periodically
+  if (embeddingCache.size > MAX_CACHE_SIZE) {
+    cleanCache();
+  }
+
   try {
     const response = await openai.embeddings.create({
       model: 'text-embedding-3-small',
@@ -45,6 +83,12 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     if (!embedding || embedding.length === 0) {
       throw new Error('Failed to generate embedding');
     }
+
+    // Cache the result
+    embeddingCache.set(cacheKey, {
+      embedding,
+      timestamp: Date.now(),
+    });
 
     return embedding;
   } catch (error) {
