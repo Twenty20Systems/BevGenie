@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Menu, X, User } from "lucide-react"
+import { Menu, X, User, LogOut } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
 
 interface NavigationProps {
   onProfileClick?: () => void;
@@ -13,6 +14,7 @@ interface NavigationProps {
 export function Navigation({ onProfileClick }: NavigationProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user, loading, signOut } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +23,11 @@ export function Navigation({ onProfileClick }: NavigationProps = {}) {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const handleSignOut = async () => {
+    await signOut()
+    setIsMobileMenuOpen(false)
+  }
 
   return (
     <nav
@@ -47,15 +54,49 @@ export function Navigation({ onProfileClick }: NavigationProps = {}) {
             <Link href="/about" className="text-[#FFFFFF] hover:text-[#00C8FF] transition-colors font-medium whitespace-nowrap">
               About Us
             </Link>
-            <button
-              onClick={onProfileClick}
-              className="flex items-center gap-2 px-3 py-2 text-[#FFFFFF] hover:text-[#00C8FF] hover:bg-white/10 rounded-lg transition-colors whitespace-nowrap"
-              title="View Your Profile"
-            >
-              <User size={20} />
-              <span className="hidden lg:inline">Profile</span>
-            </button>
-            <Button className="bg-[#00C8FF] text-[#0A1930] hover:bg-[#00C8FF]/90 font-semibold whitespace-nowrap px-4">
+
+            {!loading && (
+              <>
+                {user ? (
+                  // Show user info and logout when logged in
+                  <>
+                    <button
+                      onClick={onProfileClick}
+                      className="flex items-center gap-2 px-3 py-2 text-[#FFFFFF] hover:text-[#00C8FF] hover:bg-white/10 rounded-lg transition-colors whitespace-nowrap"
+                      title="View Your Profile"
+                    >
+                      <User size={20} />
+                      <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
+                    </button>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 px-3 py-2 text-[#FFFFFF] hover:text-red-400 hover:bg-white/10 rounded-lg transition-colors whitespace-nowrap"
+                      title="Sign out"
+                    >
+                      <LogOut size={20} />
+                      <span className="hidden lg:inline">Logout</span>
+                    </button>
+                  </>
+                ) : (
+                  // Show login/signup when not logged in
+                  <>
+                    <Link
+                      href="/login"
+                      className="text-[#FFFFFF] hover:text-[#00C8FF] transition-colors font-medium whitespace-nowrap"
+                    >
+                      Login
+                    </Link>
+                    <Link href="/signup">
+                      <Button className="bg-[#00C8FF] text-[#0A1930] hover:bg-[#00C8FF]/90 font-semibold whitespace-nowrap px-4">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
+
+            <Button className="bg-white/10 text-[#FFFFFF] hover:bg-white/20 font-semibold whitespace-nowrap px-4 border border-[#00C8FF]/30">
               Talk to an expert
             </Button>
           </div>
@@ -81,17 +122,54 @@ export function Navigation({ onProfileClick }: NavigationProps = {}) {
               >
                 About Us
               </Link>
-              <button
-                onClick={() => {
-                  onProfileClick?.();
-                  setIsMobileMenuOpen(false);
-                }}
-                className="flex items-center gap-2 text-[#FFFFFF] hover:text-[#00C8FF] transition-colors font-medium py-2"
-              >
-                <User size={20} />
-                <span>Profile</span>
-              </button>
-              <Button className="bg-[#00C8FF] text-[#0A1930] hover:bg-[#00C8FF]/90 font-semibold w-full">
+
+              {!loading && (
+                <>
+                  {user ? (
+                    // Show user info and logout in mobile menu
+                    <>
+                      <button
+                        onClick={() => {
+                          onProfileClick?.();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 text-[#FFFFFF] hover:text-[#00C8FF] transition-colors font-medium py-2"
+                      >
+                        <User size={20} />
+                        <span>{user.email}</span>
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 text-[#FFFFFF] hover:text-red-400 transition-colors font-medium py-2"
+                      >
+                        <LogOut size={20} />
+                        <span>Logout</span>
+                      </button>
+                    </>
+                  ) : (
+                    // Show login/signup in mobile menu
+                    <>
+                      <Link
+                        href="/login"
+                        className="text-[#FFFFFF] hover:text-[#00C8FF] transition-colors font-medium py-2"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/signup"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Button className="bg-[#00C8FF] text-[#0A1930] hover:bg-[#00C8FF]/90 font-semibold w-full">
+                          Sign Up
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
+
+              <Button className="bg-white/10 text-[#FFFFFF] hover:bg-white/20 font-semibold w-full border border-[#00C8FF]/30">
                 Talk to an expert
               </Button>
             </div>
