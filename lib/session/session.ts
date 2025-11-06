@@ -269,6 +269,76 @@ export async function recordPersonaSignal(
 }
 
 /**
+ * Record multiple persona signals in a single batch operation
+ * Much faster than calling recordPersonaSignal in a loop
+ */
+export async function recordPersonaSignalsBatch(
+  signals: Array<{
+    type: string;
+    evidence: string;
+    strength: 'weak' | 'medium' | 'strong';
+    category?: string;
+  }>
+): Promise<void> {
+  if (signals.length === 0) return;
+
+  const session = await getSession();
+  if (!session.user || !supabaseAdmin) {
+    console.error('Session or Supabase admin not available');
+    return;
+  }
+
+  const strengthWeights = { weak: 0.3, medium: 0.6, strong: 1.0 };
+  const confidenceBefore = session.user.persona.overall_confidence;
+
+  // Collect all pain points from signals
+  const allPainPoints = new Set(session.user.persona.pain_points_detected);
+  const updatedConfidence = { ...session.user.persona.pain_points_confidence };
+
+  signals.forEach(signal => {
+    if (signal.type === 'pain_point' && signal.category) {
+      allPainPoints.add(signal.category as PainPointType);
+      const confidenceBoost = strengthWeights[signal.strength] * 0.1;
+      const currentConfidence = updatedConfidence[signal.category as PainPointType] || 0;
+      updatedConfidence[signal.category as PainPointType] = Math.min(1.0, currentConfidence + confidenceBoost);
+    }
+  });
+
+  // Update persona once with all changes
+  if (allPainPoints.size > session.user.persona.pain_points_detected.length) {
+    await updatePersona({
+      pain_points_detected: Array.from(allPainPoints) as PainPointType[],
+      pain_points_confidence: updatedConfidence,
+    });
+  }
+
+  // Get updated confidence
+  const updatedSession = await getSession();
+  const confidenceAfter = updatedSession.user?.persona.overall_confidence || 0;
+
+  // Batch insert all signals
+  const rows = signals.map(signal => ({
+    session_id: session.user.sessionId,
+    signal_type: signal.type === 'pain_point' ? 'pain_point_mention' : signal.type,
+    signal_text: signal.evidence,
+    signal_strength: signal.strength,
+    score_updates: {},
+    pain_points_inferred: signal.type === 'pain_point' && signal.category ? [signal.category] : [],
+    confidence_before: confidenceBefore,
+    confidence_after: confidenceAfter,
+  }));
+
+  try {
+    const { error } = await supabaseAdmin.from('persona_signals').insert(rows);
+    if (error) {
+      console.error('Error batch recording persona signals:', error);
+    }
+  } catch (err) {
+    console.error('Error in recordPersonaSignalsBatch:', err);
+  }
+}
+
+/**
  * Get all conversation messages for the current session
  *
  * @returns Array of conversation messages
@@ -350,6 +420,55 @@ export async function addConversationMessage(
     }
   } catch (err) {
     console.error('Error in addConversationMessage:', err);
+  }
+}
+
+/**
+ * Add multiple messages to conversation history in a single batch operation
+ * Much faster than calling addConversationMessage multiple times
+ */
+export async function addConversationMessagesBatch(
+  messages: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    generationMode?: 'fresh' | 'returning' | 'data_connected';
+    uiSpecification?: any;
+  }>
+): Promise<void> {
+  if (messages.length === 0) return;
+
+  const session = await getSession();
+  if (!session.user || !supabaseAdmin) {
+    console.error('Session or Supabase admin not available');
+    return;
+  }
+
+  try {
+    // Batch insert all messages
+    const rows = messages.map(msg => ({
+      session_id: session.user.sessionId,
+      user_id: session.user.userId,
+      message_role: msg.role,
+      message_content: msg.content,
+      persona_snapshot: session.user.persona,
+      generation_mode: msg.generationMode || 'fresh',
+      ui_specification: msg.uiSpecification || {},
+    }));
+
+    const { error } = await supabaseAdmin.from('conversation_history').insert(rows);
+
+    if (error) {
+      console.error('Error batch adding conversation messages:', error);
+    } else {
+      // Update session with last message
+      const lastMessage = messages[messages.length - 1];
+      session.user.lastMessage = lastMessage.content.substring(0, 50);
+      session.user.lastMessageAt = Date.now();
+      session.user.messageCount += messages.length;
+      await session.save();
+    }
+  } catch (err) {
+    console.error('Error in addConversationMessagesBatch:', err);
   }
 }
 

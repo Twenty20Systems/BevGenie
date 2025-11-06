@@ -8,13 +8,13 @@
  */
 
 import { NextRequest } from 'next/server';
-import { getSession, updatePersona, addConversationMessage as addConvMsg, getConversationHistory } from '@/lib/session/session';
+import { getSession, updatePersona, addConversationMessage as addConvMsg, addConversationMessagesBatch, getConversationHistory } from '@/lib/session/session';
 import { validateAIConfiguration } from '@/lib/ai/orchestrator';
 import { detectPersonaSignals, updatePersonaWithSignals, detectAndUpdateVectors } from '@/lib/ai/persona-detection';
 import { getCurrentVectorClassification } from '@/lib/ai/vector-detection';
 import { getContextForLLM, getKnowledgeDocuments } from '@/lib/ai/knowledge-search';
 import { getPersonalizedSystemPrompt, PAIN_POINT_PROMPTS } from '@/lib/ai/prompts/system';
-import { recordPersonaSignal } from '@/lib/session/session';
+import { recordPersonaSignal, recordPersonaSignalsBatch } from '@/lib/session/session';
 import { classifyMessageIntent } from '@/lib/ai/intent-classification';
 import { generatePageSpec } from '@/lib/ai/page-generator';
 import OpenAI from 'openai';
@@ -119,8 +119,6 @@ async function processStreamWithController(
       progress: 5,
     });
 
-    await delay(150);
-
     // Stage 1: Intent
     sendEvent('stage', {
       stageId: 'intent',
@@ -142,8 +140,6 @@ async function processStreamWithController(
       progress: 25,
     });
 
-    await delay(100);
-
     // Stage 2: Signals
     sendEvent('stage', {
       stageId: 'signals',
@@ -154,19 +150,16 @@ async function processStreamWithController(
 
     const signals = detectPersonaSignals(message, updatedPersona);
 
-    for (const signal of signals) {
+    // Build signal descriptions for tracking
+    signals.forEach(signal => {
       signalDescriptions.push(`${signal.type}/${signal.category}`);
-      try {
-        await recordPersonaSignal(
-          signal.type === 'pain_point' ? 'pain_point_mention' : signal.type,
-          signal.evidence,
-          signal.strength,
-          signal.type === 'pain_point' ? ([signal.category] as PainPointType[]) : undefined,
-          {}
-        );
-      } catch (e) {
-        console.error('Signal error:', e);
-      }
+    });
+
+    // Batch record all signals in a single DB operation (much faster!)
+    try {
+      await recordPersonaSignalsBatch(signals);
+    } catch (e) {
+      console.error('Batch signal recording error:', e);
     }
 
     updatedPersona = updatePersonaWithSignals(updatedPersona, signals);
@@ -205,8 +198,6 @@ async function processStreamWithController(
       all_vectors_identified: vectorClassification.all_vectors_identified,
     });
 
-    await delay(100);
-
     // Stage 3: Knowledge
     sendEvent('stage', {
       stageId: 'knowledge',
@@ -215,8 +206,11 @@ async function processStreamWithController(
       progress: 55,
     });
 
-    const knowledgeContext = await getContextForLLM(message, updatedPersona, 5);
-    const knowledgeDocuments = await getKnowledgeDocuments(message, undefined, undefined, 5);
+    // Parallelize both KB searches for faster response
+    const [knowledgeContext, knowledgeDocuments] = await Promise.all([
+      getContextForLLM(message, updatedPersona, 5),
+      getKnowledgeDocuments(message, undefined, undefined, 5)
+    ]);
 
     sendEvent('stage', {
       stageId: 'knowledge',
@@ -224,8 +218,6 @@ async function processStreamWithController(
       stageName: 'Context gathered',
       progress: 65,
     });
-
-    await delay(100);
 
     // Stage 4: Response
     sendEvent('stage', {
@@ -261,7 +253,7 @@ async function processStreamWithController(
         model: 'gpt-4o',
         messages: [{ role: 'system', content: enhancedSystemPrompt }, ...messages],
         temperature: 0.7,
-        max_tokens: 300,
+        max_tokens: 200, // Reduced from 300 for faster response
       });
 
       aiResponse = completion.choices[0].message.content || '';
@@ -281,8 +273,6 @@ async function processStreamWithController(
       stageName: 'Response ready',
       progress: 82,
     });
-
-    await delay(100);
 
     // Stage 5: Page Generation
     sendEvent('stage', {
@@ -335,10 +325,12 @@ async function processStreamWithController(
       progress: 95,
     });
 
-    // Save to history
+    // Save to history (batch operation for better performance)
     try {
-      await addConvMsg('user', message, 'fresh');
-      await addConvMsg('assistant', aiResponse, 'fresh');
+      await addConversationMessagesBatch([
+        { role: 'user', content: message, generationMode: 'fresh' },
+        { role: 'assistant', content: aiResponse, generationMode: 'fresh' }
+      ]);
     } catch (e) {
       console.error('Save error:', e);
     }
