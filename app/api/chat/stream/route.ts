@@ -231,11 +231,11 @@ async function processStreamWithController(
       progress: 65,
     });
 
-    // Stage 4: Response
+    // Stage 4 & 5: Parallel Generation (OpenAI + Claude together for speed!)
     sendEvent('stage', {
       stageId: 'response',
       status: 'active',
-      stageName: 'Generating response...',
+      stageName: 'Generating response and page...',
       progress: 75,
     });
 
@@ -260,60 +260,59 @@ async function processStreamWithController(
       { role: 'user' as const, content: message },
     ];
 
+    const pageType = intentAnalysis.suggestedPageType || 'solution_brief';
+    const pageKnowledgeContext = knowledgeContext
+      ? knowledgeContext.split('\n').filter((l: string) => l.trim())
+      : [];
+
+    // Run OpenAI and Claude in parallel for maximum speed!
     try {
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [{ role: 'system', content: enhancedSystemPrompt }, ...messages],
-        temperature: 0.7,
-        max_tokens: 200, // Reduced from 300 for faster response
+      const [openaiResult, pageGenResult] = await Promise.all([
+        // OpenAI text response
+        openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'system', content: enhancedSystemPrompt }, ...messages],
+          temperature: 0.7,
+          max_tokens: 200,
+        }).catch(error => {
+          console.error('OpenAI error:', error);
+          return null;
+        }),
+        // Claude page generation
+        generatePageSpec({
+          userMessage: message,
+          pageType: pageType as any,
+          persona: updatedPersona,
+          knowledgeContext: pageKnowledgeContext,
+          knowledgeDocuments: knowledgeDocuments,
+          conversationHistory: messages.slice(-3),
+          personaDescription: 'User profile',
+          pageContext: pageContext,
+          interactionSource: interactionSource,
+        })
+      ]);
+
+      // Process OpenAI result
+      if (openaiResult) {
+        aiResponse = openaiResult.choices[0].message.content || '';
+      } else {
+        aiResponse = 'Error generating response';
+      }
+      perfTime = perfLog('Parallel: OpenAI + Claude', perfTime);
+
+      // Send text response
+      sendEvent('text', {
+        text: aiResponse,
       });
 
-      aiResponse = completion.choices[0].message.content || '';
-    } catch (error) {
-      console.error('OpenAI error:', error);
-      aiResponse = 'Error generating response';
-    }
-    perfTime = perfLog('OpenAI GPT-4o response', perfTime);
-
-    // Send the text response to chat
-    sendEvent('text', {
-      text: aiResponse,
-    });
-
-    sendEvent('stage', {
-      stageId: 'response',
-      status: 'complete',
-      stageName: 'Response ready',
-      progress: 82,
-    });
-
-    // Stage 5: Page Generation
-    sendEvent('stage', {
-      stageId: 'page',
-      status: 'active',
-      stageName: 'Generating personalized page...',
-      progress: 90,
-    });
-
-    try {
-      let pageType = intentAnalysis.suggestedPageType || 'solution_brief';
-
-      const pageKnowledgeContext = knowledgeContext
-        ? knowledgeContext.split('\n').filter((l: string) => l.trim())
-        : [];
-
-      const pageGenResult = await generatePageSpec({
-        userMessage: message,
-        pageType: pageType as any,
-        persona: updatedPersona,
-        knowledgeContext: pageKnowledgeContext,
-        knowledgeDocuments: knowledgeDocuments,
-        conversationHistory: messages.slice(-3),
-        personaDescription: 'User profile',
-        pageContext: pageContext,
-        interactionSource: interactionSource,
+      sendEvent('stage', {
+        stageId: 'response',
+        status: 'complete',
+        stageName: 'Response ready',
+        progress: 90,
       });
 
+      // Process Claude page result
       if (pageGenResult.success && pageGenResult.page) {
         generatedPage = {
           page: pageGenResult.page,
@@ -328,9 +327,8 @@ async function processStreamWithController(
         console.warn('[Stream] Page generation failed:', pageGenResult.error, 'Retries:', pageGenResult.retryCount);
       }
     } catch (error) {
-      console.error('[Stream] Page gen error:', error);
+      console.error('[Stream] Parallel generation error:', error);
     }
-    perfTime = perfLog('Claude page generation', perfTime);
 
     sendEvent('stage', {
       stageId: 'page',

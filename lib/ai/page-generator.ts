@@ -135,7 +135,13 @@ async function attemptPageGeneration(
   const response = await client.messages.create({
     model: 'claude-sonnet-4-5-20250929', // Switched from Opus-4 for 3-5x faster generation
     max_tokens: 2500, // Reduced from 4000 for faster generation
-    system: systemPrompt,
+    system: [
+      {
+        type: 'text',
+        text: systemPrompt,
+        cache_control: { type: 'ephemeral' }, // Cache system prompt for 50-90% speed boost
+      }
+    ],
     messages: [
       {
         role: 'user',
