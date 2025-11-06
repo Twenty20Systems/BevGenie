@@ -104,6 +104,14 @@ async function processStreamWithController(
   let generatedPage: any = null;
   const signalDescriptions: string[] = [];
 
+  // Performance tracking
+  const perfStart = Date.now();
+  const perfLog = (stage: string, startTime: number) => {
+    const duration = Date.now() - startTime;
+    console.log(`[PERF] ${stage}: ${duration}ms`);
+    return Date.now();
+  };
+
   try {
     // Helper to enqueue event
     const sendEvent = (eventType: string, data: any) => {
@@ -112,6 +120,7 @@ async function processStreamWithController(
     };
 
     // Stage 0: Init
+    let perfTime = Date.now();
     sendEvent('stage', {
       stageId: 'init',
       status: 'active',
@@ -132,6 +141,7 @@ async function processStreamWithController(
       conversationHistory.length,
       updatedPersona
     );
+    perfTime = perfLog('Intent classification', perfTime);
 
     sendEvent('stage', {
       stageId: 'intent',
@@ -161,6 +171,7 @@ async function processStreamWithController(
     } catch (e) {
       console.error('Batch signal recording error:', e);
     }
+    perfTime = perfLog('Signal detection + DB write', perfTime);
 
     updatedPersona = updatePersonaWithSignals(updatedPersona, signals);
 
@@ -211,6 +222,7 @@ async function processStreamWithController(
       getContextForLLM(message, updatedPersona, 5),
       getKnowledgeDocuments(message, undefined, undefined, 5)
     ]);
+    perfTime = perfLog('Knowledge base search (parallel)', perfTime);
 
     sendEvent('stage', {
       stageId: 'knowledge',
@@ -261,6 +273,7 @@ async function processStreamWithController(
       console.error('OpenAI error:', error);
       aiResponse = 'Error generating response';
     }
+    perfTime = perfLog('OpenAI GPT-4o response', perfTime);
 
     // Send the text response to chat
     sendEvent('text', {
@@ -317,6 +330,7 @@ async function processStreamWithController(
     } catch (error) {
       console.error('[Stream] Page gen error:', error);
     }
+    perfTime = perfLog('Claude page generation', perfTime);
 
     sendEvent('stage', {
       stageId: 'page',
@@ -334,9 +348,11 @@ async function processStreamWithController(
     } catch (e) {
       console.error('Save error:', e);
     }
+    perfTime = perfLog('History save (batch)', perfTime);
 
     // Update persona
     await updatePersona(updatedPersona);
+    perfTime = perfLog('Persona update', perfTime);
 
     // Complete event
     sendEvent('complete', {
@@ -359,6 +375,10 @@ async function processStreamWithController(
       progress: 100,
     });
 
+    const totalTime = Date.now() - perfStart;
+    console.log(`[PERF] ======================================`);
+    console.log(`[PERF] TOTAL TIME: ${totalTime}ms (${(totalTime / 1000).toFixed(1)}s)`);
+    console.log(`[PERF] ======================================`);
     console.log('[Stream] Processing complete');
   } catch (error) {
     console.error('[Stream] Fatal error:', error);
