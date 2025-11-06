@@ -141,28 +141,54 @@ export async function fillTemplateContent(
   const startTime = Date.now();
   const placeholders = extractPlaceholders(template);
 
-  // Build KB context summary (keep it brief!)
+  // Build KB context summary with MORE context
   const kbSummary = knowledgeDocuments
-    ?.slice(0, 2)
-    .map(doc => doc.content.substring(0, 150))
-    .join('\n') || '';
+    ?.slice(0, 5)  // Use more documents (was 2)
+    .map(doc => doc.content.substring(0, 300))  // Longer excerpts (was 150)
+    .join('\n---\n') || '';
 
-  const prompt = `Fill these content placeholders for a beverage industry solution page:
+  // Enhanced prompt for diverse, detailed content
+  const prompt = `Fill these content placeholders for a beverage industry solution page with DIVERSE, SPECIFIC content:
 
 User Query: "${userMessage}"
 Template: ${template.name}
-KB Context: ${kbSummary}
+User Focus: ${persona.pain_points_detected.join(', ') || 'general'}
+
+Knowledge Base Context:
+${kbSummary}
 
 Required placeholders to fill:
 ${placeholders.map(p => `- {{${p}}}`).join('\n')}
 
-Instructions:
-1. Generate SPECIFIC beverage industry content (not generic)
-2. Use real metrics and data from KB when available
-3. Keep each value concise (1-2 sentences max for descriptions)
-4. Use beverage terminology (distributors, suppliers, depletions, etc.)
+CRITICAL Instructions:
+1. Generate UNIQUE, VARIED content for each placeholder - NO REPETITION
+2. Use SPECIFIC beverage industry data: brands, distributors, metrics, regions
+3. Reference real beverage concepts: depletions, on-premise, off-premise, DSD, SKUs
+4. Include CONCRETE numbers and percentages where appropriate
+5. Make insights ACTIONABLE with clear next steps
+6. Vary language and structure across different placeholders
+7. Use data from KB context when available
+8. Each stat should have DIFFERENT metrics (don't repeat "increase sales" 3 times)
+9. Keep descriptions detailed but scannable (2-3 sentences max)
 
-Respond with ONLY a JSON object mapping placeholders to values:
+Example GOOD response with VARIETY:
+{
+  "stat1_value": "47%",
+  "stat1_label": "Faster SKU Velocity Detection",
+  "stat2_value": "$2.3M",
+  "stat2_label": "Average Annual ROI",
+  "stat3_value": "18 Days",
+  "stat3_label": "Reduced Time-to-Market"
+}
+
+Example BAD response (too repetitive):
+{
+  "stat1_label": "Increase Sales",
+  "stat2_label": "Boost Revenue",  ❌ Too similar!
+  "stat3_label": "Improve Sales"   ❌ Too similar!
+}
+
+Respond with ONLY a JSON object:
 {
   "placeholder_name": "filled value",
   ...
@@ -171,11 +197,11 @@ Respond with ONLY a JSON object mapping placeholders to values:
   try {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 1500, // Smaller than full generation
+      max_tokens: 2500, // Increased for more detailed content (was 1500)
       system: [
         {
           type: 'text',
-          text: 'You generate concise, beverage-industry-specific content for marketing pages. Output only JSON.',
+          text: 'You are an expert beverage industry content generator. Create DIVERSE, SPECIFIC, non-repetitive content. Each piece of content must be unique. Output only valid JSON.',
           cache_control: { type: 'ephemeral' },
         }
       ],
