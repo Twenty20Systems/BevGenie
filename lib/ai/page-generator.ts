@@ -56,13 +56,50 @@ export interface PageGenerationResponse {
 }
 
 /**
- * Generate a page specification using Claude
- * Main entry point for page generation
+ * Generate a page specification using templates + AI
+ * MUCH FASTER: Uses pre-built templates, AI fills content only
+ * Falls back to full generation if template-based fails
  */
 export async function generatePageSpec(
   request: PageGenerationRequest
 ): Promise<PageGenerationResponse> {
   const startTime = Date.now();
+
+  // Try template-based generation first (5-8s)
+  try {
+    const { generateFromTemplate } = await import('./template-engine');
+
+    console.log('[PageGen] Using template-based generation (fast path)');
+    const result = await generateFromTemplate(
+      request.userMessage,
+      request.pageType,
+      request.persona || {} as any,
+      request.knowledgeDocuments
+    );
+
+    if (result.success && result.filledPage) {
+      // Validate generated page
+      const validationErrors = validatePageSpec(result.filledPage);
+      if (validationErrors.length === 0) {
+        console.log(`[PageGen] ✅ Template generation successful in ${result.generationTime}ms`);
+        return {
+          success: true,
+          page: result.filledPage,
+          retryCount: 0,
+          generationTime: Date.now() - startTime,
+        };
+      } else {
+        console.warn('[PageGen] Template validation failed:', validationErrors);
+        // Fall through to full generation
+      }
+    }
+  } catch (error) {
+    console.warn('[PageGen] Template generation failed, falling back to full generation:', error);
+    // Fall through to full generation
+  }
+
+  // Fallback: Full generation (slower, 20-25s)
+  console.log('[PageGen] Using full generation (slow path - fallback)');
   let retryCount = 0;
   const maxRetries = 2;
 
