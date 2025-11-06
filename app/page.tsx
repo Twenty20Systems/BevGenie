@@ -59,8 +59,8 @@ export default function HomePage() {
   // Ref for scrolling to newly generated pages
   const lastPageRef = useRef<HTMLDivElement>(null);
 
-  // Show landing page only when no pages generated yet
-  const showLandingPage = pageHistory.length === 0 && !isGenerating;
+  // Show landing page only when no pages generated yet (even during generation)
+  const showLandingPage = pageHistory.length === 0;
 
   // Initialize session tracker
   useEffect(() => {

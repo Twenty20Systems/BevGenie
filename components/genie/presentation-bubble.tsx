@@ -137,67 +137,136 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
 
     // Define colors matching BevGenie theme
     const colors = {
-      primary: 'AA6C39', // Copper
-      secondary: '8B5A2B', // Dark copper
-      accent: '00C8FF', // Cyan
-      dark: '0A1930', // Dark blue
+      navy: '0A1628', // Dark blue (primary)
+      cyan: '06B6D4', // Cyan (accent)
+      copper: 'AA6C39', // Copper (secondary)
+      darkCopper: '8B5A2B', // Dark copper
+      white: 'FFFFFF',
+      lightGray: 'F8F9FA',
+      mediumGray: 'EBEFF2',
       text: '333333',
-      lightBg: 'F5F5F5',
+      textLight: '666666',
     };
 
-    generatedSlides.forEach((slide) => {
+    generatedSlides.forEach((slide, index) => {
       const newSlide = pres.addSlide();
 
-      // Background
-      newSlide.background = { color: 'FFFFFF' };
-
-      // Header section with gradient effect
+      // Background - Navy gradient
       newSlide.addShape(pres.ShapeType.rect, {
-        x: 0, y: 0, w: '100%', h: 1.2,
-        fill: { color: colors.primary }
+        x: 0, y: 0, w: '100%', h: '100%',
+        fill: {
+          type: 'solid',
+          color: colors.navy
+        },
+        line: { type: 'none' }
       });
 
-      // Slide number
-      newSlide.addText(`Slide ${slide.slideNumber}`, {
-        x: 0.3, y: 0.2, w: 2, h: 0.3,
-        fontSize: 12,
-        color: 'FFFFFF',
-        bold: false
+      // Subtle overlay gradient for depth
+      newSlide.addShape(pres.ShapeType.rect, {
+        x: 0, y: 0, w: '100%', h: '100%',
+        fill: {
+          type: 'solid',
+          color: colors.cyan,
+          transparency: 95
+        },
+        line: { type: 'none' }
       });
 
-      // Title
+      // Top accent bar (cyan gradient)
+      newSlide.addShape(pres.ShapeType.rect, {
+        x: 0, y: 0, w: '100%', h: 0.15,
+        fill: { color: colors.cyan },
+        line: { type: 'none' }
+      });
+
+      // Decorative corner accent (copper)
+      newSlide.addShape(pres.ShapeType.rect, {
+        x: 0, y: 0.15, w: 0.1, h: 1.2,
+        fill: { color: colors.copper },
+        line: { type: 'none' }
+      });
+
+      // Slide number badge
+      newSlide.addShape(pres.ShapeType.ellipse, {
+        x: 0.4, y: 0.3, w: 0.5, h: 0.5,
+        fill: {
+          type: 'solid',
+          color: colors.cyan,
+          transparency: 10
+        },
+        line: { color: colors.cyan, width: 2 }
+      });
+
+      newSlide.addText(`${slide.slideNumber}`, {
+        x: 0.4, y: 0.3, w: 0.5, h: 0.5,
+        fontSize: 20,
+        color: colors.white,
+        bold: true,
+        align: 'center',
+        valign: 'middle'
+      });
+
+      // Title with better positioning
       newSlide.addText(slide.title, {
-        x: 0.3, y: 0.5, w: 9, h: 0.6,
-        fontSize: 28,
-        color: 'FFFFFF',
-        bold: true
+        x: 1.2, y: 0.35, w: 8.3, h: 0.8,
+        fontSize: 32,
+        color: colors.white,
+        bold: true,
+        valign: 'middle'
       });
 
       // Subtitle if exists
       if (slide.subtitle) {
         newSlide.addText(slide.subtitle, {
-          x: 0.3, y: 1.3, w: 9, h: 0.4,
+          x: 0.5, y: 1.7, w: 9, h: 0.4,
           fontSize: 16,
-          color: colors.text,
+          color: colors.textLight,
           italic: true
         });
       }
 
-      // Content area
-      let contentY = slide.subtitle ? 1.8 : 1.5;
+      // Content area - starts below header
+      let contentY = slide.subtitle ? 2.2 : 1.8;
+
+      // Content background card
+      newSlide.addShape(pres.ShapeType.rect, {
+        x: 0.4, y: contentY - 0.1, w: 9.2, h: 4.2,
+        fill: {
+          type: 'solid',
+          color: colors.white,
+          transparency: 5
+        },
+        line: { color: colors.mediumGray, width: 1 }
+      });
 
       if (slide.content.type === 'bullets' && Array.isArray(slide.content.data)) {
-        // Bullet points
-        const bullets = slide.content.data.map((item: any) => ({
-          text: typeof item === 'string' ? item : JSON.stringify(item),
-          options: { bullet: true, fontSize: 14, color: colors.text }
-        }));
+        // Bullet points with cyan checkmarks
+        const bullets = slide.content.data.map((item: any, idx: number) => {
+          const text = typeof item === 'string' ? item : JSON.stringify(item);
+          return {
+            text: text,
+            options: {
+              bullet: {
+                type: 'number',
+                style: 'number',
+                color: colors.cyan
+              },
+              fontSize: 15,
+              color: colors.text,
+              lineSpacing: 28
+            }
+          };
+        });
 
         newSlide.addText(bullets, {
-          x: 0.5, y: contentY, w: 9, h: 3.5,
-          fontSize: 14,
+          x: 0.7, y: contentY + 0.1, w: 8.6, h: 3.8,
+          fontSize: 15,
           color: colors.text,
-          bullet: { type: 'number' }
+          bullet: {
+            type: 'number',
+            color: colors.cyan
+          },
+          lineSpacing: 28
         });
       } else if (slide.content.type === 'comparison' && Array.isArray(slide.content.data)) {
         // Two column layout for comparisons
@@ -242,36 +311,49 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
         });
       }
 
-      // Visual suggestion box
+      // Visual suggestion box with cyan accent
       newSlide.addShape(pres.ShapeType.rect, {
-        x: 0.3, y: 5.5, w: 9.4, h: 0.8,
-        fill: { color: colors.lightBg },
-        line: { color: colors.accent, width: 1 }
+        x: 0.4, y: 6.3, w: 9.2, h: 0.7,
+        fill: {
+          type: 'solid',
+          color: colors.cyan,
+          transparency: 90
+        },
+        line: { color: colors.cyan, width: 2 }
       });
 
-      newSlide.addText(`💡 Visual: ${slide.visualDescription}`, {
-        x: 0.5, y: 5.6, w: 9, h: 0.6,
-        fontSize: 10,
-        color: colors.text,
-        italic: true
+      newSlide.addText(`💡 Visual Suggestion: ${slide.visualDescription}`, {
+        x: 0.6, y: 6.4, w: 8.8, h: 0.5,
+        fontSize: 11,
+        color: colors.navy,
+        italic: true,
+        bold: true
       });
 
       // Speaker notes
       newSlide.addNotes(slide.speakerNotes);
 
+      // Footer bar
+      newSlide.addShape(pres.ShapeType.rect, {
+        x: 0, y: 7.2, w: '100%', h: 0.3,
+        fill: { color: colors.navy },
+        line: { type: 'none' }
+      });
+
       // Footer with BevGenie branding
-      newSlide.addText('Generated by BevGenie AI', {
-        x: 0.3, y: 7, w: 4, h: 0.3,
+      newSlide.addText('🎯 Generated by BevGenie AI', {
+        x: 0.5, y: 7.23, w: 4, h: 0.25,
         fontSize: 10,
-        color: colors.primary,
-        italic: true
+        color: colors.white,
+        bold: true
       });
 
       newSlide.addText(`${presentationData.session.duration} | ${presentationData.actualQuestions.length} questions`, {
-        x: 5.5, y: 7, w: 4.2, h: 0.3,
+        x: 5.5, y: 7.23, w: 4, h: 0.25,
         fontSize: 10,
-        color: colors.text,
-        align: 'right'
+        color: colors.cyan,
+        align: 'right',
+        bold: true
       });
     });
 
@@ -289,11 +371,11 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
       {!isExpanded && !generatedSlides && (
         <button
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-6 left-6 w-14 h-14 bg-gradient-to-br from-[#AA6C39] to-[#8B5A2B] hover:from-[#BB7C49] hover:to-[#9B6A3B] rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 z-40 group"
+          className="fixed bottom-6 left-6 w-14 h-14 bg-gradient-to-br from-[#0A1628] to-[#06B6D4] hover:from-[#0A1628] hover:to-[#00C8FF] rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 z-40 group"
           aria-label="Generate Presentation"
         >
           <FileText className="w-6 h-6 text-white" />
-          <div className="absolute inset-0 rounded-full border-4 border-[#AA6C39] animate-ping opacity-75" />
+          <div className="absolute inset-0 rounded-full border-4 border-[#06B6D4] animate-ping opacity-75" />
 
           {/* Badge showing questions count */}
           <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -332,7 +414,7 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
       {isExpanded && (
         <div className="fixed bottom-24 left-6 w-[420px] bg-white rounded-2xl shadow-2xl z-40 animate-scale-in border border-gray-200">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#AA6C39] to-[#8B5A2B] px-6 py-4 rounded-t-2xl flex items-center justify-between">
+          <div className="bg-gradient-to-r from-[#0A1628] to-[#06B6D4] px-6 py-4 rounded-t-2xl flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
@@ -354,26 +436,26 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
           <div className="p-6">
             {/* Session Summary */}
             <div className="mb-6">
-              <h4 className="font-semibold text-[#0A1930] mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#AA6C39]" />
+              <h4 className="font-semibold text-[#0A1628] mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#06B6D4]" />
                 Your Session Summary
               </h4>
 
               <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-[#AA6C39]">
+                <div className="bg-gradient-to-br from-[#06B6D4]/10 to-[#0A1628]/5 rounded-lg p-3 text-center border border-[#06B6D4]/20">
+                  <div className="text-2xl font-bold text-[#0A1628]">
                     {presentationData.actualQuestions.length}
                   </div>
                   <div className="text-xs text-gray-600 mt-1">Questions</div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-[#AA6C39]">
+                <div className="bg-gradient-to-br from-[#06B6D4]/10 to-[#0A1628]/5 rounded-lg p-3 text-center border border-[#06B6D4]/20">
+                  <div className="text-2xl font-bold text-[#0A1628]">
                     {presentationData.session.duration}
                   </div>
                   <div className="text-xs text-gray-600 mt-1">Duration</div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-[#AA6C39]">
+                <div className="bg-gradient-to-br from-[#06B6D4]/10 to-[#0A1628]/5 rounded-lg p-3 text-center border border-[#06B6D4]/20">
+                  <div className="text-2xl font-bold text-[#0A1628]">
                     {presentationData.roi.hoursSaved}h
                   </div>
                   <div className="text-xs text-gray-600 mt-1">Saved</div>
@@ -389,23 +471,23 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
               </p>
               <ul className="text-sm space-y-2 text-gray-700">
                 <li className="flex items-start gap-2">
-                  <span className="text-[#AA6C39] mt-0.5">•</span>
+                  <span className="text-[#06B6D4] mt-0.5">✓</span>
                   <span>Your {presentationData.actualQuestions.length} actual questions (word-for-word)</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#AA6C39] mt-0.5">•</span>
+                  <span className="text-[#06B6D4] mt-0.5">✓</span>
                   <span>Specific solutions for each problem you explored</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#AA6C39] mt-0.5">•</span>
+                  <span className="text-[#06B6D4] mt-0.5">✓</span>
                   <span>Before/after scenarios from your use cases</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#AA6C39] mt-0.5">•</span>
+                  <span className="text-[#06B6D4] mt-0.5">✓</span>
                   <span>${presentationData.roi.costSaved} in time savings analysis</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[#AA6C39] mt-0.5">•</span>
+                  <span className="text-[#06B6D4] mt-0.5">✓</span>
                   <span>{presentationData.problemSolutions.length} features demonstrated</span>
                 </li>
               </ul>
@@ -447,7 +529,7 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="w-full py-4 bg-gradient-to-r from-[#AA6C39] to-[#8B5A2B] hover:from-[#BB7C49] hover:to-[#9B6A3B] text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 bg-gradient-to-r from-[#0A1628] to-[#06B6D4] hover:from-[#0A1628] hover:to-[#00C8FF] text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isGenerating ? (
                 <>
@@ -474,7 +556,7 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#AA6C39] to-[#8B5A2B] px-6 py-4 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-[#0A1628] to-[#06B6D4] px-6 py-4 flex items-center justify-between">
               <div>
                 <h3 className="text-white font-semibold text-xl">Your Presentation</h3>
                 <p className="text-white/80 text-sm">{generatedSlides.length} slides generated</p>
@@ -491,7 +573,7 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <button
                 onClick={handleDownloadPPTX}
-                className="w-full py-4 px-4 bg-gradient-to-r from-[#AA6C39] to-[#8B5A2B] hover:from-[#BB7C49] hover:to-[#9B6A3B] text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                className="w-full py-4 px-4 bg-gradient-to-r from-[#0A1628] to-[#06B6D4] hover:from-[#0A1628] hover:to-[#00C8FF] text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
               >
                 <Download className="w-5 h-5" />
                 <span>Download PowerPoint Presentation</span>
@@ -525,7 +607,7 @@ export function PresentationBubble({ tracker, onGenerate }: PresentationBubblePr
                         <ul className="space-y-2">
                           {slide.content.data.map((item: any, idx: number) => (
                             <li key={idx} className="flex items-start gap-2">
-                              <span className="text-[#AA6C39] mt-1">•</span>
+                              <span className="text-[#06B6D4] mt-1 font-bold">✓</span>
                               <span className="text-gray-700 text-sm">
                                 {typeof item === 'string' ? item : JSON.stringify(item)}
                               </span>

@@ -111,69 +111,80 @@ CREATE EXACTLY 4 SLIDES:
 
 SLIDE 1: PERSONA DETAILS
 Title: "About You"
+Subtitle: "Your BevGenie Session Overview"
 Content type: bullets
-Content: Create 4-6 concise bullet points about the person based on their session:
-- Role: ${functionalRole} at ${orgType} (${orgSize})
-- Product Focus: ${data.persona.product_focus_detected || 'Beverage Industry'}
-- Primary Interests: ${topCategory} (based on ${data.session.queriesAsked} questions asked)
-- Session Duration: ${data.session.duration}
-- Key Focus Areas: [Summarize the 2-3 main topics from their questions]
+Content: Create 5-7 concise bullet points about the person based on their session:
+- 👤 Role: ${functionalRole} at ${orgType} (${orgSize})
+- 🍺 Product Focus: ${data.persona.product_focus_detected || 'Beverage Industry'}
+- 📌 Primary Interests: ${topCategory} (based on ${data.session.queriesAsked} questions explored)
+- ⏱️ Session Duration: ${data.session.duration}
+- 🎯 Key Focus Areas: [Summarize the 2-3 main topics from their questions with specific examples]
+- 💡 Problems Solved: ${data.session.problemsSolved} actionable solutions delivered
+- 📈 Value Generated: $${data.roi.costSaved} in time savings
 
-Visual: Professional profile-style layout with icons
-Speaker Notes: "This slide captures who you are and what you explored today."
+Visual: Clean navy gradient background with cyan accents, professional icons for each bullet, subtle blur effect
+Speaker Notes: "This slide captures your unique profile and what you explored during your BevGenie session today. Every insight was tailored to your role and industry focus."
 
 SLIDE 2: WHAT IS BEVGENIE
 Title: "What is BevGenie?"
+Subtitle: "AI-Powered Intelligence for the Beverage Industry"
 Content type: bullets
 Content: Create 5-7 clear, concise bullet points explaining BevGenie:
-- AI-powered business intelligence platform for the beverage industry
-- Instant answers to complex business questions across sales, marketing, and operations
-- Real-time data analysis replacing hours of manual work
-- Personalized insights based on your role and organization type
-- Features include: [List 3-4 most relevant features for ${functionalRole}s]
-- Proven ROI: Average time savings of [calculate typical savings for this persona]
-- Trusted by ${orgType}s ranging from craft to enterprise scale
+- 🎯 AI-powered business intelligence platform specifically for beverage industry professionals
+- ⚡ Instant answers to complex business questions across sales, marketing, and operations
+- 📊 Real-time data analysis that replaces hours of manual research and reporting
+- 🎨 Personalized insights tailored to your role, organization type, and product focus
+- 🚀 Key capabilities: [List 3-4 most relevant features for ${functionalRole} at ${orgType}]
+- 💰 Proven ROI: Saves ${data.roi.hoursSaved}+ hours per session with immediate actionable insights
+- 🏆 Trusted by beverage companies from craft producers to enterprise distributors
 
-Visual: BevGenie logo with clean, modern iconography
-Speaker Notes: "BevGenie transforms how beverage professionals make data-driven decisions."
+Visual: Navy-to-cyan gradient background with BevGenie logo, floating blur elements, modern iconography
+Speaker Notes: "BevGenie transforms how beverage professionals make data-driven decisions by combining industry expertise with AI-powered intelligence."
 
 SLIDE 3: HOW BEVGENIE HELPS YOU - PART 1
-Title: "How BevGenie Solves Your Challenges"
+Title: "Your Specific Challenges Solved"
+Subtitle: "Real Questions, Real Solutions"
 Content type: bullets
-Content: Based on their ACTUAL questions, create 5-7 specific bullet points showing how BevGenie helps:
-- Start each bullet with "✓" to show it's a solution
-- Reference their actual questions (use quotes)
-- For example: ✓ When you asked "${data.actualQuestions[0]}", BevGenie provided [specific answer/insight]
-- Show the before/after: "Before: [manual process]. After: [instant insight]"
-- Include time saved: "Saved ${data.problemSolutions[0]?.timeSaved || 15} minutes on this task alone"
-- Make each point specific to their session, NOT generic
+Content: Based on their ACTUAL questions, create 4-6 specific bullet points showing how BevGenie helps:
+- Start each bullet with "✓" emoji to show it's a solution
+- Reference their actual questions (use quotes) and be very specific
+- Format: ✓ Question: "${data.actualQuestions[0]}"
+  → Solution: [Specific answer/insight BevGenie provided]
+  → Impact: Saved ${data.problemSolutions[0]?.timeSaved || 15} minutes + gained [specific business value]
+- Show the transformation: "Before: [manual process]. After: [instant, actionable insight]"
+- Include business value, not just time saved
+- Make each point personal and specific to their session, NOT generic marketing copy
+- Maximum 2 questions per slide (this is Part 1)
 
-Example format:
-✓ Your Question: "${data.actualQuestions[0]}"
-  BevGenie's Answer: [Specific solution from ${data.problemSolutions[0]?.bevGenieSolution}]
-  Time Saved: ${data.problemSolutions[0]?.timeSaved || 15} minutes
+Visual: Navy background with cyan accent lines, professional checkmarks, modern card-style layout with subtle shadows
+Speaker Notes: "These are the exact problems you solved today with BevGenie. Each answer was instant, data-driven, and tailored to your specific business context."
 
-Visual: Checkmarks with copper/cyan gradient, clean layout
-Speaker Notes: "These are the exact problems you solved today with BevGenie."
-
-SLIDE 4: HOW BEVGENIE HELPS YOU - PART 2
-Title: "Your Results & ROI"
+SLIDE 4: YOUR RESULTS & ROI
+Title: "Measurable Impact From Today's Session"
+Subtitle: "Time Saved, Decisions Made, Value Created"
 Content type: stats
-Content: Create 4-6 key metrics showing their session impact:
-- Questions Answered: ${data.session.queriesAsked}
-- Time Saved Today: ${data.roi.hoursSaved} hours
-- Cost Savings: $${data.roi.costSaved}
-- Efficiency Gain: ${data.roi.efficiencyGain}%
-- Features You Used: [List 2-3 actual features from ${data.problemSolutions.map(ps => ps.featureUsed).join(', ')}]
-- Projected Monthly Savings: [Calculate: $${data.roi.costSaved} × 4 weeks = monthly value]
+Content: Create a compelling stats showcase with 4-6 large numbers and context:
+- 📊 ${data.session.queriesAsked} Business Questions Answered
+  → Each answered in seconds vs. hours of manual research
+- ⏰ ${data.roi.hoursSaved} Hours Saved Today
+  → Equivalent to $${data.roi.costSaved} in productivity value
+- 🎯 ${data.roi.efficiencyGain}% Efficiency Improvement
+  → Compared to traditional research methods
+- 🚀 ${data.problemSolutions.length} Actionable Solutions Delivered
+  → Features used: [List 2-3 actual features from session]
+- 📅 Projected Monthly Savings: $${Math.round(data.roi.costSaved * 4)}
+  → If you use BevGenie weekly (based on today's value)
+- 💼 Annual Value: $${Math.round(data.roi.costSaved * 52)}
+  → Potential yearly time savings at current usage rate
 
-Additional bullet points below stats:
-- "If you used BevGenie weekly, you'd save approximately [calculate annual savings] per year"
-- "Your top questions can now be answered in seconds instead of hours"
-- "Next Steps: [Suggest 1-2 relevant features for ${functionalRole} to explore]"
+Bottom section with next steps:
+"✨ Next Steps for ${functionalRole}s:"
+- [Suggest 2-3 specific features tailored to ${functionalRole} at ${orgType}]
+- Schedule regular BevGenie sessions for ongoing competitive advantage
+- Share insights with your team to multiply the impact
 
-Visual: Large gradient numbers for stats, clean modern layout
-Speaker Notes: "This is the real impact of using BevGenie based on your actual session today."
+Visual: Large cyan gradient numbers on navy background, modern stat cards with icons, professional data visualization style
+Speaker Notes: "This is the measurable, real-world impact of your BevGenie session today. These aren't projections—this is actual time and money saved from answering your specific business questions."
 
 IMPORTANT RULES:
 1. Keep ALL content as concise bullet points - NO long paragraphs

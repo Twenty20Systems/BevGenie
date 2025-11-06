@@ -42,8 +42,9 @@ export function SimpleLoader({ query, onComplete }: SimpleLoaderProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center pb-32" style={{
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)'
+      backgroundColor: 'rgba(10, 22, 40, 0.4)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)'
     }}>
       <div className="text-center space-y-4 animate-fade-in">
         {/* Blinking Dot */}
