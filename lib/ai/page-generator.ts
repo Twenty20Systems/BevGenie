@@ -133,7 +133,7 @@ async function attemptPageGeneration(
   const userPrompt = buildUserPrompt(request);
 
   const response = await client.messages.create({
-    model: 'claude-opus-4-1-20250805',
+    model: 'claude-sonnet-4-5-20250929', // Switched from Opus-4 for 3-5x faster generation
     max_tokens: 2500, // Reduced from 4000 for faster generation
     system: systemPrompt,
     messages: [
