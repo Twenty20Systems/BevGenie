@@ -15,13 +15,25 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { generateObject } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
 import {
   BevGeniePage,
   PageType,
   PAGE_TYPE_TEMPLATES,
   validatePageSpec,
 } from './page-specs';
+import { pageSchema } from './page-schemas';
 import { PersonaScores } from '@/lib/session/types';
+import {
+  type UserIntent,
+  type IntentLayoutStrategy,
+  INTENT_LAYOUT_STRATEGIES,
+  getLayoutStrategyForIntent,
+  CONTENT_GUIDELINES,
+  mapIntentToPageType
+} from '@/lib/constants/intent-layouts';
+import { classifyIntent, type IntentClassificationResult } from '@/lib/ai/intent-classifier';
 
 const client = new Anthropic();
 
@@ -45,6 +57,7 @@ export interface PageGenerationRequest {
   personaDescription?: string;
   pageContext?: any; // Context from user interactions (button clicks, navigation)
   interactionSource?: string; // Source of interaction (hero_cta_click, cta_click, learn_more, etc.)
+  userIntent?: UserIntent; // Pre-classified intent (optional, will auto-classify if not provided)
 }
 
 export interface PageGenerationResponse {
@@ -56,368 +69,215 @@ export interface PageGenerationResponse {
 }
 
 /**
- * Generate a page specification using templates + AI
- * MUCH FASTER: Uses pre-built templates, AI fills content only
- * Falls back to full generation if template-based fails
+ * Generate a page specification using intent-based fixed layouts + AI content
+ * BULLETPROOF APPROACH: Intent determines layout, AI only fills content
  */
 export async function generatePageSpec(
   request: PageGenerationRequest
 ): Promise<PageGenerationResponse> {
   const startTime = Date.now();
 
-  // Try template-based generation first (5-8s)
+  // 🚨 DEBUG: Log incoming request
+  console.log('🎯 [PageGen] Request:', {
+    message: request.userMessage,
+    pageType: request.pageType,
+    hasPersona: !!request.persona,
+    hasKnowledge: !!request.knowledgeDocuments && request.knowledgeDocuments.length > 0,
+    interactionSource: request.interactionSource || 'none',
+    providedIntent: request.userIntent || 'none'
+  });
+
+  // Step 1: Classify intent (or use provided intent)
+  const intentClassification = request.userIntent
+    ? { intent: request.userIntent, confidence: 1.0, matchedPatterns: ['provided'], reasoning: 'Intent provided by caller' }
+    : classifyIntent(request.userMessage);
+
+  console.log(`🎯 [PageGen] Intent: ${intentClassification.intent} (confidence: ${Math.round(intentClassification.confidence * 100)}%)`);
+  console.log(`🎯 [PageGen] Reasoning: ${intentClassification.reasoning}`);
+
+  // Step 2: Get fixed layout strategy for this intent
+  const intentLayoutStrategy = getLayoutStrategyForIntent(intentClassification.intent);
+  console.log(`🎯 [PageGen] Layout mode: ${intentLayoutStrategy.layoutMode}`);
+  console.log(`🎯 [PageGen] Sections: ${intentLayoutStrategy.sections.map(s => `${s.type}(${s.heightPercent}%)`).join(', ')}`);
+  console.log(`🎯 [PageGen] Strategy: ${intentLayoutStrategy.strategy}`);
+
+  // Step 3: Generate page content with intent-aware prompt
+  console.log(`🎯 [PageGen] Using INTENT-BASED generation with fixed layouts for intent: ${intentClassification.intent}`);
+
   try {
-    const { generateFromTemplate } = await import('./template-engine');
+    const page = await attemptPageGeneration(request, 0, intentLayoutStrategy, intentClassification);
 
-    console.log('[PageGen] Using template-based generation (fast path)');
-    const result = await generateFromTemplate(
-      request.userMessage,
-      request.pageType,
-      request.persona || {} as any,
-      request.knowledgeDocuments
-    );
-
-    if (result.success && result.filledPage) {
-      // Validate generated page
-      const validationErrors = validatePageSpec(result.filledPage);
-      if (validationErrors.length === 0) {
-        console.log(`[PageGen] ✅ Template generation successful in ${result.generationTime}ms`);
-        return {
-          success: true,
-          page: result.filledPage,
-          retryCount: 0,
-          generationTime: Date.now() - startTime,
-        };
-      } else {
-        console.warn('[PageGen] Template validation failed:', validationErrors);
-        // Fall through to full generation
-      }
-    }
+    // generateObject() with Zod automatically validates - no manual validation needed
+    console.log('[PageGen] ✅ Intent-based generation successful');
+    return {
+      success: true,
+      page: page,
+      retryCount: 0,
+      generationTime: Date.now() - startTime,
+    };
   } catch (error) {
-    console.warn('[PageGen] Template generation failed, falling back to full generation:', error);
-    // Fall through to full generation
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error during page generation',
+      retryCount: 0,
+      generationTime: Date.now() - startTime,
+    };
   }
-
-  // Fallback: Full generation (slower, 20-25s)
-  console.log('[PageGen] Using full generation (slow path - fallback)');
-  let retryCount = 0;
-  const maxRetries = 2;
-
-  while (retryCount <= maxRetries) {
-    try {
-      const page = await attemptPageGeneration(request, retryCount);
-
-      // Validate the generated page
-      const validationErrors = validatePageSpec(page);
-      if (validationErrors.length === 0) {
-        return {
-          success: true,
-          page,
-          retryCount,
-          generationTime: Date.now() - startTime,
-        };
-      }
-
-      // If validation fails and we have retries left, try again with feedback
-      if (retryCount < maxRetries) {
-        retryCount++;
-        // Adjust request for retry with validation feedback
-        request = {
-          ...request,
-          userMessage: `${request.userMessage}\n\n[Previous attempt had validation issues: ${validationErrors.join(', ')}. Please regenerate with these corrections.]`,
-        };
-        continue;
-      }
-
-      // All retries exhausted
-      return {
-        success: false,
-        error: `Validation failed after ${maxRetries} retries: ${validationErrors.join(', ')}`,
-        retryCount,
-        generationTime: Date.now() - startTime,
-      };
-    } catch (error) {
-      if (retryCount < maxRetries) {
-        retryCount++;
-        continue;
-      }
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error during page generation',
-        retryCount,
-        generationTime: Date.now() - startTime,
-      };
-    }
-  }
-
-  return {
-    success: false,
-    error: 'Max retries exceeded',
-    retryCount,
-    generationTime: Date.now() - startTime,
-  };
 }
 
 /**
- * Internal function to attempt page generation with Claude
+ * Internal function to attempt page generation with Claude using generateObject()
+ * Now uses intent-based fixed layouts - LLM only fills content
  */
 async function attemptPageGeneration(
   request: PageGenerationRequest,
-  retryCount: number
+  retryCount: number,
+  intentLayoutStrategy: IntentLayoutStrategy,
+  intentClassification: IntentClassificationResult
 ): Promise<BevGeniePage> {
-  const systemPrompt = buildSystemPrompt(request, retryCount);
-  const userPrompt = buildUserPrompt(request);
+  const systemPrompt = buildSystemPrompt(request, retryCount, intentLayoutStrategy, intentClassification);
+  const userPrompt = buildUserPrompt(request, intentLayoutStrategy);
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-5-20250929', // Switched from Opus-4 for 3-5x faster generation
-    max_tokens: 2500, // Reduced from 4000 for faster generation
-    system: [
-      {
-        type: 'text',
-        text: systemPrompt,
-        cache_control: { type: 'ephemeral' }, // Cache system prompt for 50-90% speed boost
-      }
-    ],
-    messages: [
-      {
-        role: 'user',
-        content: userPrompt,
-      },
-    ],
-  });
-
-  // Extract the text response
-  const textContent = response.content.find((block) => block.type === 'text');
-  if (!textContent || textContent.type !== 'text') {
-    throw new Error('No text response from Claude');
-  }
-
-  // Parse the JSON from the response
-  let pageSpec: BevGeniePage;
   try {
-    // Try to extract JSON from the response
-    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No JSON found in response');
+    const result = await generateObject({
+      model: anthropic('claude-sonnet-4-5-20250929'),
+      schema: pageSchema,
+      prompt: userPrompt,
+      system: systemPrompt,
+      temperature: 0.1, // Lower temperature = more strict adherence to instructions
+    });
+
+    if (!result.object) {
+      console.error('[PageGen] generateObject returned no object:', result);
+      throw new Error('No object generated: response did not match schema');
     }
 
-    pageSpec = JSON.parse(jsonMatch[0]) as BevGeniePage;
-  } catch (error) {
-    throw new Error(`Failed to parse page specification: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+    console.log('[PageGen] ✅ Generated page with Zod validation:', {
+      type: result.object.type,
+      sectionCount: result.object.sections?.length || 0,
+      sectionTypes: result.object.sections?.map((s: any) => s.type).join(', ') || 'none'
+    });
 
-  return pageSpec;
+    // 🚨 DEBUG: Log generated page details
+    console.log('📄 [PageGen] Generated:', {
+      type: result.object.type,
+      title: result.object.title?.substring(0, 50) + '...',
+      sectionCount: result.object.sections?.length || 0,
+      sectionTypes: result.object.sections?.map((s: any) => s.type).join(', ') || 'none',
+      firstSection: result.object.sections?.[0]?.type || 'none',
+      intentStrategy: intentLayoutStrategy.layoutMode || 'none',
+      recommendedSections: intentLayoutStrategy.sections.map(s => s.type).join(', ') || 'none'
+    });
+
+    return result.object as BevGeniePage;
+  } catch (error) {
+    console.error('[PageGen] generateObject failed:', error);
+    throw error;
+  }
 }
 
 /**
  * Build the system prompt for page generation
- * Provides context about page types, structure, and requirements
+ * Uses intent-based fixed layouts - LLM only fills content
  */
 function buildSystemPrompt(
   request: PageGenerationRequest,
-  retryCount: number
+  retryCount: number,
+  intentLayoutStrategy: IntentLayoutStrategy,
+  intentClassification: IntentClassificationResult
 ): string {
-  const template = PAGE_TYPE_TEMPLATES[request.pageType];
-  const retryNote =
-    retryCount > 0
-      ? `\n\nNote: This is retry attempt ${retryCount}. Please pay careful attention to the schema requirements and ensure all fields are present and valid.`
-      : '';
+  const contentGuidelines = CONTENT_GUIDELINES[intentClassification.intent];
 
-  return `You are an expert B2B SaaS marketing page generator specializing in the beverage industry. You create professional, detailed, and personalized pages for BevGenie - a beverage industry intelligence platform.
+  // Build the EXACT section structure the LLM must generate
+  const sectionRequirements = intentLayoutStrategy.sections.map((section, idx) => {
+    return `${idx + 1}. ${section.type} section (${section.heightPercent}% height)
+   - Content focus: ${section.contentFocus}
+   - Must specify: layout.requestedHeightPercent = ${section.heightPercent}`;
+  }).join('\n');
 
-Your task is to generate a professional ${request.pageType} page specification that will be rendered as a full-featured React website component.
+  return `You are a content writer for BevGenie B2B SaaS. The layout is FIXED - you only write content.
 
-Page Type: ${request.pageType}
-${template}
+🎯 USER INTENT: ${intentClassification.intent}
+Strategy: ${intentLayoutStrategy.strategy}
+Confidence: ${Math.round(intentClassification.confidence * 100)}%
+Reasoning: ${intentClassification.reasoning}
 
-⚠️⚠️⚠️ CRITICAL: USE SINGLE-SCREEN FORMAT ⚠️⚠️⚠️
+⛔ CRITICAL - LAYOUT IS LOCKED 🔒
+You MUST generate EXACTLY ${intentLayoutStrategy.sections.length} sections in this EXACT order:
 
-ALL pages MUST use the single_screen section format. This is the ONLY acceptable format.
-The single_screen format provides a complete, modern answer in exactly one screen (100vh, non-scrollable).
+${sectionRequirements}
 
-Your "sections" array MUST contain EXACTLY ONE object with type: "single_screen"
+Total: ${intentLayoutStrategy.sections.reduce((sum, s) => sum + s.heightPercent, 0)}%
 
-CRITICAL REQUIREMENTS:
-1. ⚠️ MANDATORY: Your "sections" array MUST contain EXACTLY ONE object with type: "single_screen"
-2. Output ONLY valid JSON that matches the BevGeniePage schema
-3. Do NOT include markdown formatting, code blocks, or explanations - output JSON only
-4. Ensure all required fields are present and complete
-5. Follow the character limits specified in validation rules
-6. Create DETAILED, SPECIFIC, and PROFESSIONAL content for the beverage industry
-7. Include concrete metrics, data points, and industry-specific insights from the knowledge base
-8. Make headlines compelling and subheadlines supporting - not redundant
-9. Create action-oriented CTAs with clear business value
-10. Structure content to flow logically from problem → insight → solution → action
-11. Use professional B2B SaaS language appropriate for C-suite executives and department heads
+🚨 ABSOLUTE REQUIREMENTS - NO EXCEPTIONS:
+1. Generate EXACTLY ${intentLayoutStrategy.sections.length} sections (no more, no less)
+2. Use ONLY these types: ${intentLayoutStrategy.sections.map(s => s.type).join(', ')}
+3. Maintain EXACT order listed above
+4. Set requestedHeightPercent to EXACT values specified above
+5. DO NOT add extra sections
+6. DO NOT skip sections
+7. DO NOT change the order
 
-⚠️ CONTENT GENERATION REQUIREMENTS - COMPREHENSIVE & INFORMATIVE:
+📝 CONTENT GUIDELINES FOR "${intentClassification.intent}":
+- Headline: ${contentGuidelines.headline.min}-${contentGuidelines.headline.max} chars, ${contentGuidelines.headline.tone}
+- Subheadline: ${contentGuidelines.subheadline.min}-${contentGuidelines.subheadline.max} chars, ${contentGuidelines.subheadline.tone}
+${contentGuidelines.maxFeatures > 0 ? `- Max features: ${contentGuidelines.maxFeatures}` : ''}
+${contentGuidelines.featureDescriptionLength.max > 0 ? `- Feature descriptions: ${contentGuidelines.featureDescriptionLength.min}-${contentGuidelines.featureDescriptionLength.max} chars` : ''}
 
-Your single-screen sections MUST answer the user's query COMPLETELY within one viewport.
-Each section is INFORMATION-RICH with specific, actionable insights.
+Example headlines for this intent:
+${contentGuidelines.examples.map(ex => `  - "${ex}"`).join('\n')}
 
-SINGLE-SCREEN SECTION FORMAT:
+SECTION JSON FORMAT (COPY EXACT HEIGHT VALUES):
 {
-  "type": "single_screen",
-  "headline": "Clear, Benefit-Driven Title (20-60 chars)" - Focus on the VALUE, not feature name
-  "subtitle": "Specific Context (20-50 chars)" - MUST be specific to user's query. Examples: "Velocity Analysis for Beer Brands" or "Market Expansion Strategy". NEVER use: "Solution Brief", "BevGenie Solution", or generic terms.
-
-  "insights": [
-    {
-      "text": "DETAILED insight with specific mechanism. Example: 'Velocity Shift Detection: Our AI identifies 15-30% more sales opportunities by analyzing campaign velocity shifts across your distribution network that traditional analytics miss.'"
-    },
-    {
-      "text": "ACTIONABLE insight with clear benefit. Example: 'Market Pattern Recognition: Intelligent algorithms recognize emerging patterns in real-time, allowing you to capitalize on opportunities 3-4 weeks faster than competitors.'"
-    },
-    {
-      "text": "OUTCOME-focused insight with numbers. Example: 'Automated Revenue Strategies: AI converts market data into specific sales actions, increasing conversion rates by 2.5x on average.'"
-    },
-    {
-      "text": "FOURTH insight connecting to their business (optional). Each insight should be 2-3 complete sentences with data."
-    }
-  ],
-
-  "stats": [
-    {
-      "value": "15-30%",
-      "label": "More Sales Opportunities",
-      "description": "Than traditional methods" (optional)
-    },
-    {
-      "value": "3-4 wks",
-      "label": "Faster Market Response",
-      "description": "Before competitors" (optional)
-    },
-    {
-      "value": "2.5x",
-      "label": "Conversion Rate Boost",
-      "description": "Average improvement" (optional)
-    }
-  ],
-
-  "visualContent": {
-    "type": "case_study" OR "highlight_box" OR "example",
-    "title": "Real-World Impact" OR "How This Helps You" OR "Industry Example",
-    "content": "DETAILED narrative (3-5 sentences). For case_study: tell a specific story with company type, challenge, solution, and outcome. For highlight_box: explain the mechanism in detail. For example: show a concrete scenario.",
-    "highlight": "KEY RESULT with numbers. Example: '$2.3M additional revenue in Q4 by targeting 12 previously overlooked accounts'"
-  },
-
-  "howItWorks": [
-    "Connect your campaign and sales data seamlessly",
-    "AI analyzes velocity patterns across all markets",
-    "Receive prioritized opportunity alerts weekly",
-    "Get specific account recommendations with reasoning",
-    "Track ROI on every acted opportunity"
-  ] (3-5 specific, actionable steps),
-
-  "ctas": [
-    {
-      "text": "Schedule Opportunity Analysis",
-      "type": "primary",
-      "action": "form",
-      "submissionType": "demo"
-    },
-    {
-      "text": "View Case Studies",
-      "type": "secondary",
-      "action": "new_section",
-      "context": { "topic": "success_stories", "related_to": "headline" }
-    },
-    {
-      "text": "Explore [Related Topic]",
-      "type": "secondary",
-      "action": "new_section",
-      "context": { "topic": "..." }
-    }
-  ] (Always provide 3 CTAs with diverse actions)
+  "type": "${intentLayoutStrategy.sections[0].type}",
+  "layout": { "requestedHeightPercent": ${intentLayoutStrategy.sections[0].heightPercent} },  // ← EXACT VALUE
+  "headline": "Your Headline Here",
+  "subheadline": "Your subheadline here"
 }
 
-CRITICAL CONTENT RULES:
-1. ANSWER THE QUESTION FULLY - Don't be vague. Provide specific mechanisms, numbers, and outcomes
-2. BE CONCRETE - Use real industry data, specific percentages, timeframes, dollar amounts
-3. SHOW VALUE - Every insight must connect to business impact (revenue, time, efficiency)
-4. USE BEVERAGE INDUSTRY CONTEXT - Reference specific categories (spirits, beer, wine), distributor challenges, market dynamics
-5. MAKE IT SCANNABLE - Each insight is self-contained, stats are large and clear
-6. PROVIDE NEXT ACTIONS - 3 different CTAs for different user intents (demo, learn more, explore related)
+BRAND GUIDELINES:
+- Beverage industry B2B terminology
+- Professional, credible tone
+- Focus on market intelligence, data-driven insights
+- Colors: Navy #0A1930, Cyan #00C8FF, Copper #AA6C39
+- Content density: ${intentLayoutStrategy.contentDensity}
 
-DESIGN SYSTEM:
-Brand Colors: Copper (#AA6C39), Cyan (#00C8FF), Navy (#0A1930)
-Typography: Headlines (text-5xl-7xl), Body (text-xl)
-Components: Modern cards, gradients, hover effects, animations
-Spacing: Generous padding (py-20), large icons (w-16), dramatic CTAs
-
-CONTENT: Use beverage industry context, real metrics from KB, personalized to query. Include 4-5 sections: hero, features/benefits, metrics, social proof, CTA.
-
-SCHEMA: type="${request.pageType}", title (50-100), description (150-250), sections array.
-Section types: hero, feature_grid, testimonial, comparison_table, cta, faq, metrics, steps.
-
-STYLING: Gradient backgrounds, large headlines, copper/cyan colors, hover effects, animations, generous spacing.
-
-Respond with ONLY the JSON page specification, nothing else.${retryNote}`;
+⚠️ VIOLATIONS WILL CAUSE ERRORS - Follow the exact structure above.`;
 }
 
 /**
  * Build the user prompt for page generation
  * Includes specific context from the conversation and knowledge base
  */
-function buildUserPrompt(request: PageGenerationRequest): string {
-  const contextParts: string[] = [];
+function buildUserPrompt(request: PageGenerationRequest, intentLayoutStrategy: IntentLayoutStrategy): string {
+  const parts: string[] = [];
 
-  contextParts.push(`CONTEXT:`);
-  contextParts.push(`User's Question/Topic: "${request.userMessage}"`);
+  parts.push(`USER QUERY: "${request.userMessage}"`);
+  parts.push(`\nGENERATE: ${request.pageType} page with the ${intentLayoutStrategy.sections.length} sections specified in the system prompt.`);
 
   // Add page interaction context if available
-  if (request.pageContext) {
-    contextParts.push(`\nUser Interaction Context:`);
-    contextParts.push(`- Interaction Type: ${request.interactionSource || 'direct_question'}`);
-    if (request.pageContext.originalQuery) {
-      contextParts.push(`- Original Query: "${request.pageContext.originalQuery}"`);
-    }
-    if (request.pageContext.context) {
-      contextParts.push(`- User Clicked On: "${request.pageContext.context}"`);
-    }
-    contextParts.push(`\nNote: The user is refining their query by clicking on specific page elements.`);
-    contextParts.push(`Generate deeper, more specific content based on what they clicked on.`);
+  if (request.pageContext?.context) {
+    parts.push(`\nCONTEXT: User clicked "${request.pageContext.context}" - provide deeper detail on this topic.`);
   }
 
-  // Add persona context if available
+  // Add persona context (brief)
   if (request.personaDescription) {
-    contextParts.push(`\nUser Profile/Persona:${request.personaDescription}`);
+    parts.push(`\nUSER PROFILE: ${request.personaDescription.substring(0, 150)}`);
   }
 
-  // Add knowledge documents as internal context for LLM (not visible to end user)
+  // Add knowledge documents - top 2 only, 150 chars each
   if (request.knowledgeDocuments && request.knowledgeDocuments.length > 0) {
-    contextParts.push(`\n====== KB CONTEXT ======`);
-    contextParts.push(`Use these industry insights to personalize your page:\n`);
-    // Limit to top 3 docs and truncate to 200 chars each for speed
-    request.knowledgeDocuments.slice(0, 3).forEach((doc, idx) => {
-      const relevancePercent = Math.round((doc.similarity_score || 0) * 100);
-      const truncatedContent = doc.content.substring(0, 200);
-      contextParts.push(`[${idx + 1}] ${relevancePercent}%: ${truncatedContent}...\n`);
-    });
-    contextParts.push(`====== END KB ======\n`);
-  }
-
-  // Add knowledge context - reduced for speed
-  if (request.knowledgeContext && request.knowledgeContext.length > 0) {
-    contextParts.push(`\nINDUSTRY INSIGHTS:`);
-    request.knowledgeContext.slice(0, 3).forEach((context, idx) => {
-      // Truncate to 150 chars
-      contextParts.push(`${idx + 1}. ${context.substring(0, 150)}...`);
+    parts.push(`\nRELEVANT INSIGHTS FROM KNOWLEDGE BASE:`);
+    request.knowledgeDocuments.slice(0, 2).forEach((doc, idx) => {
+      const percent = Math.round((doc.similarity_score || 0) * 100);
+      parts.push(`  ${idx + 1}. [${percent}% match] ${doc.content.substring(0, 150)}`);
     });
   }
 
-  // Add conversation history - last 2 messages only
-  if (request.conversationHistory && request.conversationHistory.length > 1) {
-    const recent = request.conversationHistory.slice(-2).map((m) =>
-      `${m.role}: ${m.content.substring(0, 100)}...`
-    );
-    contextParts.push(`\nRECENT: ${recent.join(' | ')}`);
-  }
+  // Emphasize the exact structure required
+  parts.push(`\nREMEMBER: Generate EXACTLY ${intentLayoutStrategy.sections.length} sections with types: ${intentLayoutStrategy.sections.map(s => s.type).join(', ')}`);
 
-  contextParts.push(`\n\nTASK: Generate ${request.pageType} page using KB insights. 4-5 sections, beverage-specific, data-driven. Output ONLY JSON.`);
-
-  return contextParts.join('\n');
+  return parts.join('\n');
 }
 
 /**
