@@ -142,7 +142,7 @@ async function attemptPageGeneration(
     const response = await client.messages.create({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 4096,
-      temperature: 0.2,
+      temperature: 0.7, // Higher temperature for content variety
       system: systemPrompt,
       messages: [{
         role: 'user',
@@ -226,6 +226,27 @@ You MUST generate EXACTLY ${intentLayoutStrategy.sections.length} sections in th
 ${sectionRequirements}
 
 Total: ${intentLayoutStrategy.sections.reduce((sum, s) => sum + s.heightPercent, 0)}%
+
+🚨 CRITICAL 100VH CONSTRAINT:
+Header: 10vh (FIXED)
+Your content: 90vh (YOU DISTRIBUTE)
+Your sections MUST use requestedHeightPercent that sums to ~100%
+
+✅ CORRECT:
+{ "type": "hero", "layout": { "requestedHeightPercent": 40 } }      // 36vh
+{ "type": "feature_grid", "layout": { "requestedHeightPercent": 40 } } // 36vh
+{ "type": "cta", "layout": { "requestedHeightPercent": 20 } }       // 18vh
+TOTAL: 40 + 40 + 20 = 100% = 90vh ✓ PERFECT!
+
+❌ WRONG:
+{ "type": "hero", "layout": { "requestedHeightPercent": 30 } }
+{ "type": "feature_grid", "layout": { "requestedHeightPercent": 30 } }
+TOTAL: 60% = 54vh = 36vh WASTED = WHITE SPACE! ❌
+
+🎨 COLORS (MUST FOLLOW):
+ONLY use: Cyan (#06B6D4, #22D3EE) and Blue (#3B82F6, #2563EB)
+NO purple, NO pink, NO orange
+Dark background: #0A1628
 
 🚨 ABSOLUTE REQUIREMENTS - NO EXCEPTIONS:
 1. Generate EXACTLY ${intentLayoutStrategy.sections.length} sections (no more, no less)

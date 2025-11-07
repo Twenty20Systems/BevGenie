@@ -7,18 +7,18 @@ import { Download, Share2, ExternalLink, ArrowRight, Target, BarChart3, Trending
 import { SingleScreenSection } from '@/components/genie/single-screen-section';
 
 /**
- * Get section heights directly from LLM's layout guidance
- * NO frontend calculations - LLM decides everything
+ * Get section heights with 100vh normalization
+ * Ensures sections always sum to exactly 90vh (100vh - 10vh header)
  */
 function getSectionHeightsFromLLM(sections: PageSection[]): Map<number, string> {
   const heightMap = new Map<number, string>();
-  const AVAILABLE_VH = 87; // 100vh - 13vh for header
+  const AVAILABLE_VH = 90; // 100vh - 10vh for header (EXACT)
 
   let totalRequested = 0;
   let sectionsWithoutHeight = 0;
 
   // First pass: collect LLM's explicit height requests
-  sections.forEach((section: any, index) => {
+  sections.forEach((section: any) => {
     if (section.layout?.requestedHeightPercent) {
       totalRequested += section.layout.requestedHeightPercent;
     } else {
@@ -26,27 +26,44 @@ function getSectionHeightsFromLLM(sections: PageSection[]): Map<number, string> 
     }
   });
 
-  // Second pass: assign heights
+  // Handle missing heights
+  if (sectionsWithoutHeight > 0) {
+    const remainingPercent = Math.max(0, 100 - totalRequested);
+    const perSection = remainingPercent / sectionsWithoutHeight;
+    sections.forEach((section: any) => {
+      if (!section.layout?.requestedHeightPercent) {
+        section.layout = { requestedHeightPercent: perSection };
+        totalRequested += perSection;
+      }
+    });
+  }
+
+  // 🚨 CRITICAL: Normalize to exactly 100%
+  const normalizationFactor = 100 / totalRequested;
+  console.log('📐 [HEIGHT VALIDATION]:');
+  console.log(`  Total Requested: ${totalRequested.toFixed(1)}%`);
+  console.log(`  Normalization Factor: ${normalizationFactor.toFixed(3)}x`);
+
+  let actualTotal = 0;
+  const vhValues: string[] = [];
+
+  // Second pass: assign normalized heights
   sections.forEach((section: any, index) => {
-    if (section.layout?.requestedHeightPercent) {
-      // Use LLM's explicit request
-      const vh = Math.floor((section.layout.requestedHeightPercent / 100) * AVAILABLE_VH);
-      heightMap.set(index, `${vh}vh`);
-    } else if (sectionsWithoutHeight > 0) {
-      // Distribute remaining space equally
-      const remaining = AVAILABLE_VH - Math.floor((totalRequested / 100) * AVAILABLE_VH);
-      const autoVH = Math.floor(remaining / sectionsWithoutHeight);
-      heightMap.set(index, `${autoVH}vh`);
-    }
+    const requestedPercent = section.layout?.requestedHeightPercent || 0;
+    const normalizedPercent = requestedPercent * normalizationFactor;
+    const vh = Math.round((normalizedPercent / 100) * AVAILABLE_VH);
+
+    heightMap.set(index, `${vh}vh`);
+    actualTotal += vh;
+    vhValues.push(`${vh}vh`);
+
+    console.log(`  ${section.type}: ${requestedPercent.toFixed(1)}% → ${normalizedPercent.toFixed(1)}% → ${vh}vh`);
   });
 
-  console.log('🎨 [LLM Heights]:',
-    Array.from(heightMap.entries()).map(([idx, height]) => {
-      const section: any = sections[idx];
-      const requested = section.layout?.requestedHeightPercent;
-      return `${section.type}: ${height}${requested ? ` (LLM requested ${requested}%)` : ' (auto)'}`;
-    }).join(', ')
-  );
+  console.log(`  Normalized: 100.0%`);
+  console.log(`  Grid: ${vhValues.join(' ')}`);
+  console.log(`  Total VH: ${actualTotal}vh / ${AVAILABLE_VH}vh`);
+  console.log(`  ✅ Valid: ${actualTotal >= AVAILABLE_VH - 2 && actualTotal <= AVAILABLE_VH + 2}`);
 
   return heightMap;
 }
@@ -317,11 +334,12 @@ function getFeatureIcon(title: string): React.ReactElement {
  * Grid of features with icons and descriptions - Premium design with gradient cards and hover effects
  */
 function FeatureGridSection({ section, onNavigationClick }: { section: any; onNavigationClick?: any }) {
+  // ONLY cyan/blue gradients - NO purple, NO pink
   const gradients = [
-    'from-cyan-500 to-blue-600',
-    'from-blue-600 to-purple-600',
-    'from-purple-600 to-pink-600',
-    'from-pink-600 to-orange-500'
+    'from-cyan-400 to-cyan-600',
+    'from-cyan-500 to-blue-500',
+    'from-blue-400 to-blue-600',
+    'from-cyan-600 to-blue-700'
   ];
 
   return (
@@ -544,60 +562,36 @@ function CTASection({
   };
 
   return (
-    <div className="cta-section relative h-full flex items-center justify-center overflow-hidden px-6 md:px-12">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 animate-gradient-x" />
+    <div className="cta-section relative h-full flex items-center justify-between overflow-hidden px-8 md:px-16 bg-[#0A1628]">
+      {/* Chat Bubble - Left Corner */}
+      <button
+        onClick={() => onNavigationClick?.('open_chat', { source: 'cta_chat' })}
+        className="group relative z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
+        title="Chat with BevGenie"
+      >
+        <svg className="w-6 h-6 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </button>
 
-      {/* Floating blur elements with staggered animation */}
-      <div className="absolute top-[20%] right-[10%] w-[25%] h-[50%] bg-white/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-[20%] left-[10%] w-[25%] h-[50%] bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }} />
-
-      <div className="relative z-10 max-w-4xl text-center">
-        <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
-          {section.title}
-        </h3>
-        {section.description && (
-          <p className="text-lg md:text-xl mb-8 text-white/90 max-w-2xl mx-auto leading-relaxed">
-            {section.description}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-4 justify-center">
-          {section.buttons?.length > 0 ? (
-            section.buttons.map((button: any, idx: number) => (
-              <button
-                key={idx}
-                onClick={() => handleButtonClick(button)}
-                className={`group px-8 py-4 font-semibold rounded-xl transition-all duration-300 hover:-translate-y-1 flex items-center gap-2 ${
-                  button.primary
-                    ? 'bg-white text-blue-600 hover:shadow-2xl hover:shadow-white/30'
-                    : 'bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 hover:bg-white/30'
-                }`}
-              >
-                {button.text}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            ))
-          ) : (
-            <>
-              <button
-                onClick={() => onNavigationClick?.('get_started', { source: 'cta_primary' })}
-                className="group px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:shadow-2xl hover:shadow-white/30 transition-all hover:-translate-y-1 flex items-center gap-2"
-              >
-                Get Started
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button
-                onClick={() => onNavigationClick?.('contact_sales', { source: 'cta_secondary' })}
-                className="group px-8 py-4 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/30 transition-all hover:-translate-y-1 flex items-center gap-2"
-              >
-                Contact Sales
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </>
-          )}
-        </div>
+      {/* Center Text (Optional) */}
+      <div className="relative z-10 text-center">
+        <p className="text-sm md:text-base text-slate-400">
+          {section.title || 'Ready to get started?'}
+        </p>
       </div>
+
+      {/* PPT/Presentation Bubble - Right Corner */}
+      <button
+        onClick={() => onNavigationClick?.('download_presentation', { source: 'cta_ppt' })}
+        className="group relative z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-blue-500/50"
+        title="Download Presentation"
+      >
+        <svg className="w-6 h-6 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6" />
+        </svg>
+      </button>
     </div>
   );
 }
