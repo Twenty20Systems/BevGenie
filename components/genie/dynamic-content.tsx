@@ -32,8 +32,8 @@ export function DynamicContent({
   };
 
   return (
-    <div className="h-screen overflow-y-auto bg-white">
-      {/* Page Content */}
+    <div className="h-full w-full overflow-hidden">
+      {/* Page Content - fills parent h-screen container */}
       <DynamicPageRenderer
         page={specification}
         onNavigationClick={onNavigationClick}

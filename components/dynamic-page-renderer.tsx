@@ -5,14 +5,14 @@ import { BevGeniePage, PageSection, sanitizePageContent } from '@/lib/ai/page-sp
 import { COLORS } from '@/lib/constants/colors';
 import { Download, Share2, ExternalLink, ArrowRight, Target, BarChart3, TrendingUp, Zap, Users, Map as MapIcon, Award, Shield } from 'lucide-react';
 import { SingleScreenSection } from '@/components/genie/single-screen-section';
+import { Footer } from '@/components/footer';
 
 /**
- * Get section heights with 100vh normalization
- * Ensures sections always sum to exactly 90vh (100vh - 10vh header)
+ * Get section heights with 100% normalization
+ * Ensures sections always sum to exactly 100% of available space
  */
 function getSectionHeightsFromLLM(sections: PageSection[]): Map<number, string> {
   const heightMap = new Map<number, string>();
-  const AVAILABLE_VH = 90; // 100vh - 10vh for header (EXACT)
 
   let totalRequested = 0;
   let sectionsWithoutHeight = 0;
@@ -45,25 +45,33 @@ function getSectionHeightsFromLLM(sections: PageSection[]): Map<number, string> 
   console.log(`  Normalization Factor: ${normalizationFactor.toFixed(3)}x`);
 
   let actualTotal = 0;
-  const vhValues: string[] = [];
+  const percentValues: string[] = [];
 
-  // Second pass: assign normalized heights
+  // Second pass: assign normalized percentages
   sections.forEach((section: any, index) => {
     const requestedPercent = section.layout?.requestedHeightPercent || 0;
-    const normalizedPercent = requestedPercent * normalizationFactor;
-    const vh = Math.round((normalizedPercent / 100) * AVAILABLE_VH);
+    const normalizedPercent = Math.floor(requestedPercent * normalizationFactor);
 
-    heightMap.set(index, `${vh}vh`);
-    actualTotal += vh;
-    vhValues.push(`${vh}vh`);
+    heightMap.set(index, `${normalizedPercent}%`);
+    actualTotal += normalizedPercent;
+    percentValues.push(`${normalizedPercent}%`);
 
-    console.log(`  ${section.type}: ${requestedPercent.toFixed(1)}% → ${normalizedPercent.toFixed(1)}% → ${vh}vh`);
+    console.log(`  ${section.type}: ${requestedPercent.toFixed(1)}% → ${normalizedPercent}%`);
   });
 
-  console.log(`  Normalized: 100.0%`);
-  console.log(`  Grid: ${vhValues.join(' ')}`);
-  console.log(`  Total VH: ${actualTotal}vh / ${AVAILABLE_VH}vh`);
-  console.log(`  ✅ Valid: ${actualTotal >= AVAILABLE_VH - 2 && actualTotal <= AVAILABLE_VH + 2}`);
+  // Ensure exactly 100% by adjusting the largest section
+  if (actualTotal < 100) {
+    const diff = 100 - actualTotal;
+    const largestIndex = Array.from(heightMap.entries())
+      .reduce((max, curr) => parseInt(curr[1]) > parseInt(max[1]) ? curr : max)[0];
+    const currentPercent = parseInt(heightMap.get(largestIndex) || '0');
+    heightMap.set(largestIndex, `${currentPercent + diff}%`);
+    actualTotal = 100;
+  }
+
+  console.log(`  Grid Template: ${Array.from(heightMap.values()).join(' ')}`);
+  console.log(`  Total: ${actualTotal}%`);
+  console.log(`  ✅ Valid: ${actualTotal === 100}`);
 
   return heightMap;
 }
@@ -115,25 +123,29 @@ export function DynamicPageRenderer({
     .join(' ');
 
   return (
-    <div
-      className={`dynamic-page-renderer w-full h-full ${compact ? 'compact' : 'full'}`}
-      style={{
-        display: 'grid',
-        gridTemplateRows,
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Render sections in grid cells */}
-      {sanitizedPage.sections.map((section, index) => (
-        <SectionRenderer
-          key={index}
-          section={section}
-          index={index}
-          onNavigationClick={onNavigationClick}
-          onBackToHome={onBackToHome}
-        />
-      ))}
+    <div className="h-full w-full flex flex-col overflow-hidden bg-[#0A1628]">
+      {/* Content - fills available space with grid layout */}
+      <div
+        className="flex-1 overflow-hidden"
+        style={{
+          display: 'grid',
+          gridTemplateRows,
+        }}
+      >
+        {/* Render sections in grid cells */}
+        {sanitizedPage.sections.map((section, index) => (
+          <SectionRenderer
+            key={index}
+            section={section}
+            index={index}
+            onNavigationClick={onNavigationClick}
+            onBackToHome={onBackToHome}
+          />
+        ))}
+      </div>
+
+      {/* Footer - fixed height at bottom */}
+      <Footer />
     </div>
   );
 }
@@ -248,7 +260,7 @@ function HeroSection({
   const restOfHeadline = words.slice(0, -1).join(' ');
 
   return (
-    <div className="hero-section relative h-full flex items-center justify-center overflow-hidden px-6 md:px-12">
+    <div className="hero-section relative h-full flex items-center justify-center overflow-hidden px-6 md:px-12 py-6">
       {/* Gradient background - DARK NAVY */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628] via-[#1e3a5f] to-[#0A1628]" />
 
@@ -256,41 +268,41 @@ function HeroSection({
       <div className="absolute top-[10%] right-[5%] w-[30%] h-[40%] bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-[10%] left-[5%] w-[30%] h-[40%] bg-blue-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
 
-      <div className="max-w-5xl relative z-10 w-full text-center">
-        {/* Badge */}
-        <div className="inline-block mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 backdrop-blur-sm">
-          <span className="text-sm font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+      <div className="max-w-5xl relative z-10 w-full text-center space-y-4">
+        {/* Compact Badge */}
+        <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 backdrop-blur-sm">
+          <span className="text-xs font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
             Market Intelligence Platform
           </span>
         </div>
 
-        {/* Headline with gradient on last word */}
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+        {/* Responsive Headline with gradient on last word */}
+        <h2 className="font-bold leading-tight" style={{ fontSize: 'clamp(1.75rem, 4.5vh, 3.5rem)' }}>
           <span className="text-white">{restOfHeadline} </span>
-          <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-blue-500 bg-clip-text text-transparent">
             {lastWord}
           </span>
         </h2>
 
-        {/* Subheadline */}
+        {/* Compact Subheadline */}
         {section.subheadline && (
-          <p className="text-lg md:text-xl text-slate-300 mb-6 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-slate-300 max-w-3xl mx-auto" style={{ fontSize: 'clamp(0.875rem, 2vh, 1.125rem)', lineHeight: '1.5' }}>
             {section.subheadline}
           </p>
         )}
 
-        {/* CTA Buttons - ALWAYS SHOW */}
-        <div className="flex flex-wrap gap-4 justify-center">
+        {/* Compact CTA Buttons */}
+        <div className="flex flex-wrap gap-3 justify-center pt-2">
           <button
             onClick={() => onNavigationClick?.('explore_features', { source: 'hero_primary_cta' })}
-            className="group px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-semibold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all hover:-translate-y-1 flex items-center gap-2 text-white"
+            className="group px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-semibold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all hover:-translate-y-1 flex items-center gap-2 text-white text-sm"
           >
             {section.ctaButton?.text || 'Explore Features'}
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
           <button
             onClick={() => onNavigationClick?.('schedule_demo', { source: 'hero_secondary_cta' })}
-            className="px-8 py-4 bg-white/10 backdrop-blur-sm rounded-xl font-semibold border border-white/20 hover:bg-white/20 transition-all hover:-translate-y-1 text-white"
+            className="px-6 py-2.5 bg-white/10 backdrop-blur-sm rounded-xl font-semibold border border-white/20 hover:bg-white/20 transition-all hover:-translate-y-1 text-white text-sm"
           >
             Schedule Demo
           </button>

@@ -227,21 +227,31 @@ ${sectionRequirements}
 
 Total: ${intentLayoutStrategy.sections.reduce((sum, s) => sum + s.heightPercent, 0)}%
 
-🚨 CRITICAL 100VH CONSTRAINT:
-Header: 10vh (FIXED)
-Your content: 90vh (YOU DISTRIBUTE)
-Your sections MUST use requestedHeightPercent that sums to ~100%
+🚨 MANDATORY HEIGHT CONSTRAINT - NO WHITE SPACE ALLOWED:
+Your sections MUST use requestedHeightPercent that sums to 95-105%
+The frontend will normalize to exactly 100%, filling the entire screen.
 
-✅ CORRECT:
-{ "type": "hero", "layout": { "requestedHeightPercent": 40 } }      // 36vh
-{ "type": "feature_grid", "layout": { "requestedHeightPercent": 40 } } // 36vh
-{ "type": "cta", "layout": { "requestedHeightPercent": 20 } }       // 18vh
-TOTAL: 40 + 40 + 20 = 100% = 90vh ✓ PERFECT!
+✅ CORRECT EXAMPLES:
+{ "type": "hero", "layout": { "requestedHeightPercent": 40 } }
+{ "type": "feature_grid", "layout": { "requestedHeightPercent": 40 } }
+{ "type": "cta", "layout": { "requestedHeightPercent": 20 } }
+TOTAL: 40 + 40 + 20 = 100% ✓ PERFECT!
 
-❌ WRONG:
+OR:
+{ "type": "hero", "layout": { "requestedHeightPercent": 35 } }
+{ "type": "feature_grid", "layout": { "requestedHeightPercent": 50 } }
+{ "type": "cta", "layout": { "requestedHeightPercent": 15 } }
+TOTAL: 35 + 50 + 15 = 100% ✓ PERFECT!
+
+❌ WRONG - CREATES WHITE SPACE:
 { "type": "hero", "layout": { "requestedHeightPercent": 30 } }
 { "type": "feature_grid", "layout": { "requestedHeightPercent": 30 } }
-TOTAL: 60% = 54vh = 36vh WASTED = WHITE SPACE! ❌
+TOTAL: 60% = 40% WHITE SPACE! ❌ UNACCEPTABLE!
+
+🎯 PROVEN HEIGHT TEMPLATES (ALWAYS SUM TO 100%):
+- 2 sections: [50, 50] or [45, 55] or [40, 60]
+- 3 sections: [35, 50, 15] or [30, 55, 15] or [40, 45, 15]
+- 4 sections: [30, 35, 25, 10] or [25, 40, 25, 10]
 
 🎨 COLORS (MUST FOLLOW):
 ONLY use: Cyan (#06B6D4, #22D3EE) and Blue (#3B82F6, #2563EB)
