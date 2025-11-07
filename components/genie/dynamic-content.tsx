@@ -32,7 +32,7 @@ export function DynamicContent({
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-white">
+    <div className="h-screen overflow-y-auto bg-white">
       {/* Page Content */}
       <DynamicPageRenderer
         page={specification}

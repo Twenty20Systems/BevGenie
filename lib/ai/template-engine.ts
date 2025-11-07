@@ -262,6 +262,27 @@ function fillPlaceholders(template: TemplateVariant, contentMap: Record<string, 
 
   const filled = JSON.parse(filledStr);
 
+  // FIX: Convert insights from string[] to Array<{ text: string }>
+  if (filled.structure?.sections) {
+    filled.structure.sections = filled.structure.sections.map((section: any) => {
+      if (section.insights && Array.isArray(section.insights)) {
+        section.insights = section.insights.map((insight: any) => {
+          // If insight is already an object with text property, keep it
+          if (typeof insight === 'object' && insight.text) {
+            return insight;
+          }
+          // If insight is a string, wrap it in an object
+          if (typeof insight === 'string') {
+            return { text: insight };
+          }
+          // Fallback
+          return { text: String(insight) };
+        });
+      }
+      return section;
+    });
+  }
+
   // Convert to BevGeniePage format
   return {
     type: 'solution_brief',

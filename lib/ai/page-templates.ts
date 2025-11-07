@@ -20,7 +20,7 @@ export interface TemplateSection {
   // Placeholders marked with {{key}} will be filled by AI
   headline: string; // e.g., "{{value_proposition}}"
   subtitle: string;
-  insights: string[]; // Each can have placeholders
+  insights: string[]; // Array of insight strings with placeholders (will be converted to {text: string} format)
   stats: TemplateStat[];
   visualContent: TemplateVisual;
   howItWorks: string[];

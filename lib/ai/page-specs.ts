@@ -37,15 +37,16 @@ export interface FeatureGridSection {
   }>;
 }
 
-export interface TestimonialSection {
-  type: 'testimonial';
-  quote: string;
-  author: string;
-  company?: string;
-  role?: string;
-  metric?: string; // e.g., "78% ROI improvement"
-  image?: string; // Profile image URL
-}
+// Testimonial section removed - BevGenie is a new product without customer testimonials yet
+// export interface  {
+//   type: 'testimonial';
+//   quote: string;
+//   author: string;
+//   company?: string;
+//   role?: string;
+//   metric?: string;
+//   image?: string;
+// }
 
 export interface ComparisonTableSection {
   type: 'comparison_table';
@@ -130,7 +131,6 @@ export interface SingleScreenSection {
 export type PageSection =
   | HeroSection
   | FeatureGridSection
-  | TestimonialSection
   | ComparisonTableSection
   | CTASection
   | FAQSection
@@ -163,7 +163,7 @@ export interface SolutionBriefPage {
   description: string;
   persona?: string; // e.g., "craft_brewery_sales_focus"
   painPointsAddressed: string[];
-  sections: [HeroSection, FeatureGridSection, TestimonialSection, CTASection];
+  sections: [HeroSection, FeatureGridSection, CTASection];
 }
 
 /**
@@ -193,7 +193,7 @@ export interface CaseStudyPage {
   customerName: string;
   customerType: string; // e.g., "Craft Brewery"
   challenge: string;
-  sections: [HeroSection, MetricsSection, TestimonialSection, StepsSection, CTASection];
+  sections: [HeroSection, MetricsSection, StepsSection, CTASection];
 }
 
 /**
@@ -211,7 +211,6 @@ export interface ComparisonPage {
     HeroSection,
     ComparisonTableSection,
     FeatureGridSection,
-    TestimonialSection,
     CTASection
   ];
 }
@@ -328,14 +327,24 @@ export const VALIDATION_RULES = {
     description: { minLength: 10, maxLength: 200 },
   },
   single_screen: {
-    headline: { minLength: 20, maxLength: 60 },
-    subtitle: { minLength: 20, maxLength: 50 },
+    headline: { minLength: 20, maxLength: 80 },
+    subtitle: { minLength: 15, maxLength: 60 },
     minInsights: 3,
     maxInsights: 4,
+    insightText: { minLength: 50, maxLength: 250 }, // Each insight should be concise but detailed
     minStats: 3,
     maxStats: 3,
+    statValue: { minLength: 1, maxLength: 15 }, // e.g., "47%" or "2.5x"
+    statLabel: { minLength: 5, maxLength: 40 }, // e.g., "Faster Response Time"
+    visualContentTitle: { minLength: 10, maxLength: 50 },
+    visualContentText: { minLength: 100, maxLength: 400 }, // Main content paragraph
+    visualContentHighlight: { minLength: 20, maxLength: 200 }, // Key result
+    howItWorksStep: { minLength: 20, maxLength: 100 }, // Each step
+    minHowItWorksSteps: 3,
+    maxHowItWorksSteps: 5,
     minCTAs: 2,
     maxCTAs: 3,
+    ctaText: { minLength: 5, maxLength: 40 },
   },
 };
 
@@ -431,6 +440,66 @@ export const PAGE_TYPE_TEMPLATES: Record<PageType, string> = {
     Length: ~2-3 minutes to read
   `,
 };
+
+/**
+ * Truncate text to max length with ellipsis
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength - 3) + '...';
+}
+
+/**
+ * Sanitize and truncate single_screen section content to fit on screen
+ * This is a safety measure in case AI doesn't respect character limits
+ */
+export function sanitizeSingleScreenSection(section: any): any {
+  const rules = VALIDATION_RULES.single_screen;
+
+  return {
+    ...section,
+    headline: truncateText(section.headline, rules.headline.maxLength),
+    subtitle: truncateText(section.subtitle, rules.subtitle.maxLength),
+    insights: section.insights?.slice(0, rules.maxInsights).map((insight: any) => ({
+      text: truncateText(insight.text || insight, rules.insightText.maxLength)
+    })) || [],
+    stats: section.stats?.slice(0, rules.maxStats).map((stat: any) => ({
+      value: truncateText(stat.value, rules.statValue.maxLength),
+      label: truncateText(stat.label, rules.statLabel.maxLength),
+      description: stat.description ? truncateText(stat.description, 50) : undefined
+    })) || [],
+    visualContent: section.visualContent ? {
+      type: section.visualContent.type,
+      title: truncateText(section.visualContent.title, rules.visualContentTitle.maxLength),
+      content: truncateText(section.visualContent.content, rules.visualContentText.maxLength),
+      highlight: section.visualContent.highlight
+        ? truncateText(section.visualContent.highlight, rules.visualContentHighlight.maxLength)
+        : undefined
+    } : section.visualContent,
+    howItWorks: section.howItWorks
+      ?.slice(0, rules.maxHowItWorksSteps)
+      .map((step: string) => truncateText(step, rules.howItWorksStep.maxLength)) || [],
+    ctas: section.ctas?.slice(0, rules.maxCTAs).map((cta: any) => ({
+      ...cta,
+      text: truncateText(cta.text, rules.ctaText.maxLength)
+    })) || []
+  };
+}
+
+/**
+ * Sanitize all sections in a page to ensure content fits
+ */
+export function sanitizePageContent(page: BevGeniePage): BevGeniePage {
+  return {
+    ...page,
+    sections: page.sections.map(section => {
+      if (section.type === 'single_screen') {
+        return sanitizeSingleScreenSection(section);
+      }
+      return section;
+    }) as any
+  };
+}
 
 /**
  * Validate a page specification
@@ -543,18 +612,82 @@ function validateSection(section: PageSection): string[] {
 
     case 'single_screen':
       const singleScreen = section as any;
+
+      // Validate headline and subtitle
       if (!singleScreen.headline || !singleScreen.subtitle) {
         errors.push('Missing headline or subtitle');
       }
-      if (!singleScreen.insights || singleScreen.insights.length < 3) {
-        errors.push('Too few insights (min 3)');
+      if (singleScreen.headline && singleScreen.headline.length > rules.headline.maxLength) {
+        errors.push(`Headline too long (max ${rules.headline.maxLength} chars, got ${singleScreen.headline.length})`);
       }
-      if (!singleScreen.stats || singleScreen.stats.length < 3) {
-        errors.push('Too few stats (min 3)');
+      if (singleScreen.subtitle && singleScreen.subtitle.length > rules.subtitle.maxLength) {
+        errors.push(`Subtitle too long (max ${rules.subtitle.maxLength} chars, got ${singleScreen.subtitle.length})`);
       }
-      if (!singleScreen.ctas || singleScreen.ctas.length < 2) {
-        errors.push('Too few CTAs (min 2)');
+
+      // Validate insights
+      if (!singleScreen.insights || singleScreen.insights.length < rules.minInsights) {
+        errors.push(`Too few insights (min ${rules.minInsights})`);
       }
+      if (singleScreen.insights && singleScreen.insights.length > rules.maxInsights) {
+        errors.push(`Too many insights (max ${rules.maxInsights})`);
+      }
+      singleScreen.insights?.forEach((insight: any, i: number) => {
+        const text = insight.text || insight;
+        if (text && text.length > rules.insightText.maxLength) {
+          errors.push(`Insight ${i} too long (max ${rules.insightText.maxLength} chars, got ${text.length})`);
+        }
+      });
+
+      // Validate stats
+      if (!singleScreen.stats || singleScreen.stats.length < rules.minStats) {
+        errors.push(`Too few stats (min ${rules.minStats})`);
+      }
+      if (singleScreen.stats && singleScreen.stats.length > rules.maxStats) {
+        errors.push(`Too many stats (max ${rules.maxStats})`);
+      }
+      singleScreen.stats?.forEach((stat: any, i: number) => {
+        if (stat.value && stat.value.length > rules.statValue.maxLength) {
+          errors.push(`Stat ${i} value too long (max ${rules.statValue.maxLength} chars)`);
+        }
+        if (stat.label && stat.label.length > rules.statLabel.maxLength) {
+          errors.push(`Stat ${i} label too long (max ${rules.statLabel.maxLength} chars)`);
+        }
+      });
+
+      // Validate visual content
+      if (singleScreen.visualContent) {
+        if (singleScreen.visualContent.content && singleScreen.visualContent.content.length > rules.visualContentText.maxLength) {
+          errors.push(`Visual content text too long (max ${rules.visualContentText.maxLength} chars, got ${singleScreen.visualContent.content.length})`);
+        }
+        if (singleScreen.visualContent.highlight && singleScreen.visualContent.highlight.length > rules.visualContentHighlight.maxLength) {
+          errors.push(`Visual content highlight too long (max ${rules.visualContentHighlight.maxLength} chars)`);
+        }
+      }
+
+      // Validate how it works
+      if (singleScreen.howItWorks) {
+        if (singleScreen.howItWorks.length > rules.maxHowItWorksSteps) {
+          errors.push(`Too many "how it works" steps (max ${rules.maxHowItWorksSteps})`);
+        }
+        singleScreen.howItWorks.forEach((step: string, i: number) => {
+          if (step && step.length > rules.howItWorksStep.maxLength) {
+            errors.push(`"How it works" step ${i} too long (max ${rules.howItWorksStep.maxLength} chars)`);
+          }
+        });
+      }
+
+      // Validate CTAs
+      if (!singleScreen.ctas || singleScreen.ctas.length < rules.minCTAs) {
+        errors.push(`Too few CTAs (min ${rules.minCTAs})`);
+      }
+      if (singleScreen.ctas && singleScreen.ctas.length > rules.maxCTAs) {
+        errors.push(`Too many CTAs (max ${rules.maxCTAs})`);
+      }
+      singleScreen.ctas?.forEach((cta: any, i: number) => {
+        if (cta.text && cta.text.length > rules.ctaText.maxLength) {
+          errors.push(`CTA ${i} text too long (max ${rules.ctaText.maxLength} chars)`);
+        }
+      });
       break;
   }
 

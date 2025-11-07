@@ -15,15 +15,12 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { generateObject } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
 import {
   BevGeniePage,
   PageType,
   PAGE_TYPE_TEMPLATES,
   validatePageSpec,
 } from './page-specs';
-import { pageSchema } from './page-schemas';
 import { PersonaScores } from '@/lib/session/types';
 import {
   type UserIntent,
@@ -35,7 +32,9 @@ import {
 } from '@/lib/constants/intent-layouts';
 import { classifyIntent, type IntentClassificationResult } from '@/lib/ai/intent-classifier';
 
-const client = new Anthropic();
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 export interface KBDocument {
   id: string;
@@ -139,39 +138,58 @@ async function attemptPageGeneration(
   const userPrompt = buildUserPrompt(request, intentLayoutStrategy);
 
   try {
-    const result = await generateObject({
-      model: anthropic('claude-sonnet-4-5-20250929'),
-      schema: pageSchema,
-      prompt: userPrompt,
+    // Use Claude's native messages API with JSON mode instead of strict Zod validation
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 4096,
+      temperature: 0.2,
       system: systemPrompt,
-      temperature: 0.1, // Lower temperature = more strict adherence to instructions
+      messages: [{
+        role: 'user',
+        content: userPrompt + '\n\nRespond with ONLY valid JSON matching the page structure. No markdown, no explanation, just the JSON object.'
+      }]
     });
 
-    if (!result.object) {
-      console.error('[PageGen] generateObject returned no object:', result);
-      throw new Error('No object generated: response did not match schema');
+    const textContent = response.content.find((block: any) => block.type === 'text');
+    if (!textContent) {
+      throw new Error('No text content in response');
     }
 
-    console.log('[PageGen] ✅ Generated page with Zod validation:', {
-      type: result.object.type,
-      sectionCount: result.object.sections?.length || 0,
-      sectionTypes: result.object.sections?.map((s: any) => s.type).join(', ') || 'none'
+    // Extract JSON from response (handle potential markdown code blocks)
+    let jsonText = textContent.text.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/```\n?/g, '').replace(/```\n?$/g, '');
+    }
+
+    const pageObject = JSON.parse(jsonText);
+
+    console.log('[PageGen] ✅ Generated page (no strict validation):', {
+      type: pageObject.type,
+      sectionCount: pageObject.sections?.length || 0,
+      sectionTypes: pageObject.sections?.map((s: any) => s.type).join(', ') || 'none'
     });
 
     // 🚨 DEBUG: Log generated page details
     console.log('📄 [PageGen] Generated:', {
-      type: result.object.type,
-      title: result.object.title?.substring(0, 50) + '...',
-      sectionCount: result.object.sections?.length || 0,
-      sectionTypes: result.object.sections?.map((s: any) => s.type).join(', ') || 'none',
-      firstSection: result.object.sections?.[0]?.type || 'none',
+      type: pageObject.type,
+      title: pageObject.title?.substring(0, 50) + '...',
+      sectionCount: pageObject.sections?.length || 0,
+      sectionTypes: pageObject.sections?.map((s: any) => s.type).join(', ') || 'none',
+      firstSection: pageObject.sections?.[0]?.type || 'none',
       intentStrategy: intentLayoutStrategy.layoutMode || 'none',
       recommendedSections: intentLayoutStrategy.sections.map(s => s.type).join(', ') || 'none'
     });
 
-    return result.object as BevGeniePage;
+    return pageObject as BevGeniePage;
   } catch (error) {
-    console.error('[PageGen] generateObject failed:', error);
+    console.error('[PageGen] ❌ Generation failed:', error);
+    console.error('[PageGen] ❌ Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+    });
+
     throw error;
   }
 }
@@ -227,6 +245,33 @@ ${contentGuidelines.featureDescriptionLength.max > 0 ? `- Feature descriptions: 
 Example headlines for this intent:
 ${contentGuidelines.examples.map(ex => `  - "${ex}"`).join('\n')}
 
+🎨 FEATURE TITLE REQUIREMENTS (CRITICAL FOR ICONS):
+When generating feature_grid sections, feature titles MUST include one of these keywords for proper icon mapping:
+- "Performance" → BarChart3 icon
+- "Intelligence" → Zap icon
+- "Distributor" → Users icon
+- "Competitive" → Target icon
+- "Gap" → TrendingUp icon
+- "Account" → Award icon
+- "Prioritization" → Map icon
+- "Optimization" → Shield icon
+
+✅ GOOD Examples:
+  - "Performance Analytics Dashboard"
+  - "Competitive Intelligence Tracking"
+  - "Distributor Relationship Management"
+
+❌ BAD Examples (no icon keywords):
+  - "Track Your Metrics" (use "Performance Tracking" instead)
+  - "Market Insights" (use "Competitive Intelligence" instead)
+  - "Manage Partners" (use "Distributor Management" instead)
+
+🔘 CTA BUTTON REQUIREMENTS:
+- Hero sections: ALWAYS include ctaButton field with meaningful action
+- CTA sections: ALWAYS include buttons array with at least 2 buttons
+- Button text should be action-oriented: "Explore Features", "Schedule Demo", "Get Started"
+- Never leave CTA fields empty or null
+
 SECTION JSON FORMAT (COPY EXACT HEIGHT VALUES):
 {
   "type": "${intentLayoutStrategy.sections[0].type}",
@@ -242,7 +287,29 @@ BRAND GUIDELINES:
 - Colors: Navy #0A1930, Cyan #00C8FF, Copper #AA6C39
 - Content density: ${intentLayoutStrategy.contentDensity}
 
-⚠️ VIOLATIONS WILL CAUSE ERRORS - Follow the exact structure above.`;
+📦 REQUIRED JSON OUTPUT FORMAT:
+{
+  "type": "${request.pageType}",
+  "title": "Page title (10-100 chars)",
+  "description": "Page description (50-250 chars)",
+  "sections": [
+    {
+      "type": "${intentLayoutStrategy.sections[0]?.type || 'hero'}",
+      "layout": { "requestedHeightPercent": ${intentLayoutStrategy.sections[0]?.heightPercent || 35} },
+      "headline": "Main headline",
+      "subheadline": "Supporting text",
+      "ctaButton": { "text": "Action text", "action": "action_name" }
+    },
+    // ... ${intentLayoutStrategy.sections.length} sections total
+  ]
+}
+
+⚠️ CRITICAL:
+- Output ONLY valid JSON
+- NO markdown code blocks
+- NO explanatory text
+- Exactly ${intentLayoutStrategy.sections.length} sections
+- All required fields must be present`;
 }
 
 /**
