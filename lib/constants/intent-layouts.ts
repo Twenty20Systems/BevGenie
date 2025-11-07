@@ -33,9 +33,8 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'product_inquiry',
     layoutMode: 'balanced',
     sections: [
-      { type: 'hero', heightPercent: 45, contentFocus: 'brand_value_proposition' },
-      { type: 'feature_grid', heightPercent: 48, contentFocus: 'core_capabilities' },
-      { type: 'cta', heightPercent: 7, contentFocus: 'exploration' }
+      { type: 'hero', heightPercent: 50, contentFocus: 'brand_value_proposition' },
+      { type: 'feature_grid', heightPercent: 50, contentFocus: 'core_capabilities' }
     ],
     contentDensity: 'balanced',
     primarySection: 0,
@@ -46,9 +45,8 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'feature_question',
     layoutMode: 'feature_focused',
     sections: [
-      { type: 'hero', heightPercent: 25, contentFocus: 'feature_category_intro' },
-      { type: 'feature_grid', heightPercent: 68, contentFocus: 'detailed_features_with_benefits' },
-      { type: 'cta', heightPercent: 7, contentFocus: 'demo_request' }
+      { type: 'hero', heightPercent: 30, contentFocus: 'feature_category_intro' },
+      { type: 'feature_grid', heightPercent: 70, contentFocus: 'detailed_features_with_benefits' }
     ],
     contentDensity: 'balanced',
     primarySection: 1,
@@ -72,9 +70,8 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'stats_roi',
     layoutMode: 'metrics_dominant',
     sections: [
-      { type: 'hero', heightPercent: 35, contentFocus: 'results_promise' },
-      { type: 'metrics', heightPercent: 58, contentFocus: 'roi_stats_with_context' },
-      { type: 'cta', heightPercent: 7, contentFocus: 'roi_calculator' }
+      { type: 'hero', heightPercent: 40, contentFocus: 'results_promise' },
+      { type: 'metrics', heightPercent: 60, contentFocus: 'roi_stats_with_context' }
     ],
     contentDensity: 'spacious',
     primarySection: 1,
@@ -85,9 +82,8 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'implementation',
     layoutMode: 'process_focused',
     sections: [
-      { type: 'hero', heightPercent: 28, contentFocus: 'ease_of_start' },
-      { type: 'steps', heightPercent: 65, contentFocus: 'implementation_roadmap' },
-      { type: 'cta', heightPercent: 7, contentFocus: 'schedule_kickoff' }
+      { type: 'hero', heightPercent: 30, contentFocus: 'ease_of_start' },
+      { type: 'steps', heightPercent: 70, contentFocus: 'implementation_roadmap' }
     ],
     contentDensity: 'balanced',
     primarySection: 1,
@@ -98,9 +94,8 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'use_case',
     layoutMode: 'solution_focused',
     sections: [
-      { type: 'hero', heightPercent: 40, contentFocus: 'use_case_validation' },
-      { type: 'feature_grid', heightPercent: 53, contentFocus: 'relevant_capabilities' },
-      { type: 'cta', heightPercent: 7, contentFocus: 'custom_consultation' }
+      { type: 'hero', heightPercent: 45, contentFocus: 'use_case_validation' },
+      { type: 'feature_grid', heightPercent: 55, contentFocus: 'relevant_capabilities' }
     ],
     contentDensity: 'balanced',
     primarySection: 0,
@@ -111,9 +106,8 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'off_topic',
     layoutMode: 'redirect_focused',
     sections: [
-      { type: 'hero', heightPercent: 45, contentFocus: 'polite_redirect_with_suggestions' },
-      { type: 'feature_grid', heightPercent: 30, contentFocus: 'what_i_can_help_with' },
-      { type: 'cta', heightPercent: 15, contentFocus: 'explore_capabilities' }
+      { type: 'hero', heightPercent: 55, contentFocus: 'polite_redirect_with_suggestions' },
+      { type: 'feature_grid', heightPercent: 45, contentFocus: 'what_i_can_help_with' }
     ],
     contentDensity: 'spacious',
     primarySection: 0,
