@@ -46,3 +46,4 @@ secrets/
 *.sln
 *.sw?
 env.local
+.vercel

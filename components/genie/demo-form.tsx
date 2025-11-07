@@ -33,9 +33,10 @@ export function DemoForm({ onClose, context }: DemoFormProps) {
     try {
       // Insert into Supabase
       const { error } = await supabase
-        .from('demo_requests')
+        .from('cta_submissions')
         .insert([
           {
+            submission_type: 'demo',
             name: formData.name,
             email: formData.email,
             company: formData.company,
