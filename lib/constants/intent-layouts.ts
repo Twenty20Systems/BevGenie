@@ -33,8 +33,9 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'product_inquiry',
     layoutMode: 'balanced',
     sections: [
-      { type: 'hero', heightPercent: 50, contentFocus: 'brand_value_proposition' },
-      { type: 'feature_grid', heightPercent: 50, contentFocus: 'core_capabilities' }
+      { type: 'hero', heightPercent: 35, contentFocus: 'brand_value_proposition' },
+      { type: 'feature_grid', heightPercent: 50, contentFocus: 'core_capabilities' },
+      { type: 'cta', heightPercent: 15, contentFocus: 'conversion_focused' }
     ],
     contentDensity: 'balanced',
     primarySection: 0,
@@ -45,8 +46,9 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'feature_question',
     layoutMode: 'feature_focused',
     sections: [
-      { type: 'hero', heightPercent: 30, contentFocus: 'feature_category_intro' },
-      { type: 'feature_grid', heightPercent: 70, contentFocus: 'detailed_features_with_benefits' }
+      { type: 'hero', heightPercent: 25, contentFocus: 'feature_category_intro' },
+      { type: 'feature_grid', heightPercent: 60, contentFocus: 'detailed_features_with_benefits' },
+      { type: 'cta', heightPercent: 15, contentFocus: 'conversion_focused' }
     ],
     contentDensity: 'balanced',
     primarySection: 1,
@@ -57,9 +59,10 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'comparison',
     layoutMode: 'balanced',
     sections: [
-      { type: 'hero', heightPercent: 25, contentFocus: 'differentiation_headline' },
-      { type: 'comparison_table', heightPercent: 40, contentFocus: 'feature_by_feature_comparison' },
-      { type: 'metrics', heightPercent: 25, contentFocus: 'competitive_advantage_stats' }
+      { type: 'hero', heightPercent: 20, contentFocus: 'differentiation_headline' },
+      { type: 'comparison_table', heightPercent: 35, contentFocus: 'feature_by_feature_comparison' },
+      { type: 'metrics', heightPercent: 30, contentFocus: 'competitive_advantage_stats' },
+      { type: 'cta', heightPercent: 15, contentFocus: 'conversion_focused' }
     ],
     contentDensity: 'balanced',
     primarySection: 1,
@@ -70,8 +73,9 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'stats_roi',
     layoutMode: 'metrics_dominant',
     sections: [
-      { type: 'hero', heightPercent: 40, contentFocus: 'results_promise' },
-      { type: 'metrics', heightPercent: 60, contentFocus: 'roi_stats_with_context' }
+      { type: 'hero', heightPercent: 30, contentFocus: 'results_promise' },
+      { type: 'metrics', heightPercent: 55, contentFocus: 'roi_stats_with_context' },
+      { type: 'cta', heightPercent: 15, contentFocus: 'conversion_focused' }
     ],
     contentDensity: 'spacious',
     primarySection: 1,
@@ -82,8 +86,9 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'implementation',
     layoutMode: 'process_focused',
     sections: [
-      { type: 'hero', heightPercent: 30, contentFocus: 'ease_of_start' },
-      { type: 'steps', heightPercent: 70, contentFocus: 'implementation_roadmap' }
+      { type: 'hero', heightPercent: 25, contentFocus: 'ease_of_start' },
+      { type: 'steps', heightPercent: 60, contentFocus: 'implementation_roadmap' },
+      { type: 'cta', heightPercent: 15, contentFocus: 'conversion_focused' }
     ],
     contentDensity: 'balanced',
     primarySection: 1,
@@ -94,8 +99,9 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'use_case',
     layoutMode: 'solution_focused',
     sections: [
-      { type: 'hero', heightPercent: 45, contentFocus: 'use_case_validation' },
-      { type: 'feature_grid', heightPercent: 55, contentFocus: 'relevant_capabilities' }
+      { type: 'hero', heightPercent: 35, contentFocus: 'use_case_validation' },
+      { type: 'feature_grid', heightPercent: 50, contentFocus: 'relevant_capabilities' },
+      { type: 'cta', heightPercent: 15, contentFocus: 'conversion_focused' }
     ],
     contentDensity: 'balanced',
     primarySection: 0,
@@ -106,8 +112,9 @@ export const INTENT_LAYOUT_STRATEGIES: Record<UserIntent, IntentLayoutStrategy> 
     intent: 'off_topic',
     layoutMode: 'redirect_focused',
     sections: [
-      { type: 'hero', heightPercent: 55, contentFocus: 'polite_redirect_with_suggestions' },
-      { type: 'feature_grid', heightPercent: 45, contentFocus: 'what_i_can_help_with' }
+      { type: 'hero', heightPercent: 40, contentFocus: 'polite_redirect_with_suggestions' },
+      { type: 'feature_grid', heightPercent: 45, contentFocus: 'what_i_can_help_with' },
+      { type: 'cta', heightPercent: 15, contentFocus: 'conversion_focused' }
     ],
     contentDensity: 'spacious',
     primarySection: 0,

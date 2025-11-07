@@ -31,6 +31,7 @@ import {
   mapIntentToPageType
 } from '@/lib/constants/intent-layouts';
 import { classifyIntent, type IntentClassificationResult } from '@/lib/ai/intent-classifier';
+import { getPreviouslyUsedContent, trackGeneratedContent } from '@/lib/session/content-memory';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -57,6 +58,7 @@ export interface PageGenerationRequest {
   pageContext?: any; // Context from user interactions (button clicks, navigation)
   interactionSource?: string; // Source of interaction (hero_cta_click, cta_click, learn_more, etc.)
   userIntent?: UserIntent; // Pre-classified intent (optional, will auto-classify if not provided)
+  sessionId?: string; // Session ID for content memory tracking
 }
 
 export interface PageGenerationResponse {

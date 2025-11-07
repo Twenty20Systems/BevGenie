@@ -6,6 +6,7 @@ import { COLORS } from '@/lib/constants/colors';
 import { Download, Share2, ExternalLink, ArrowRight, Target, BarChart3, TrendingUp, Zap, Users, Map as MapIcon, Award, Shield } from 'lucide-react';
 import { SingleScreenSection } from '@/components/genie/single-screen-section';
 import { Footer } from '@/components/footer';
+import { DemoForm } from '@/components/genie/demo-form';
 
 /**
  * Get section heights with 100% normalization
@@ -269,13 +270,6 @@ function HeroSection({
       <div className="absolute bottom-[10%] left-[5%] w-[30%] h-[40%] bg-blue-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
 
       <div className="max-w-5xl relative z-10 w-full text-center space-y-4">
-        {/* Compact Badge */}
-        <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 backdrop-blur-sm">
-          <span className="text-xs font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-            Market Intelligence Platform
-          </span>
-        </div>
-
         {/* Responsive Headline with gradient on last word */}
         <h2 className="font-bold leading-tight" style={{ fontSize: 'clamp(1.75rem, 4.5vh, 3.5rem)' }}>
           <span className="text-white">{restOfHeadline} </span>
@@ -291,22 +285,7 @@ function HeroSection({
           </p>
         )}
 
-        {/* Compact CTA Buttons */}
-        <div className="flex flex-wrap gap-3 justify-center pt-2">
-          <button
-            onClick={() => onNavigationClick?.('explore_features', { source: 'hero_primary_cta' })}
-            className="group px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-semibold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all hover:-translate-y-1 flex items-center gap-2 text-white text-sm"
-          >
-            {section.ctaButton?.text || 'Explore Features'}
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button
-            onClick={() => onNavigationClick?.('schedule_demo', { source: 'hero_secondary_cta' })}
-            className="px-6 py-2.5 bg-white/10 backdrop-blur-sm rounded-xl font-semibold border border-white/20 hover:bg-white/20 transition-all hover:-translate-y-1 text-white text-sm"
-          >
-            Schedule Demo
-          </button>
-        </div>
+        {/* NO BUTTONS IN HERO - They belong in CTA section at bottom */}
       </div>
     </div>
   );
@@ -554,7 +533,7 @@ function ComparisonTableSection({ section }: { section: any }) {
 
 /**
  * CTA Section Component
- * Premium animated gradient banner with interactive buttons
+ * Premium CTA with demo form modal support
  */
 function CTASection({
   section,
@@ -563,48 +542,67 @@ function CTASection({
   section: any;
   onNavigationClick?: (action: string, context?: any) => void;
 }) {
-  const handleButtonClick = (button: any) => {
+  const [showDemoForm, setShowDemoForm] = React.useState(false);
+
+  const handleScheduleDemo = () => {
+    setShowDemoForm(true);
+  };
+
+  const handleExploreTools = () => {
     if (onNavigationClick) {
-      onNavigationClick(button.action || 'cta_click', {
-        text: button.text,
-        context: section.title,
-        isPrimary: button.primary,
+      onNavigationClick('explore_tools', {
+        source: 'cta_button',
+        context: section.title
       });
     }
   };
 
   return (
-    <div className="cta-section relative h-full flex items-center justify-between overflow-hidden px-8 md:px-16 bg-[#0A1628]">
-      {/* Chat Bubble - Left Corner */}
-      <button
-        onClick={() => onNavigationClick?.('open_chat', { source: 'cta_chat' })}
-        className="group relative z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
-        title="Chat with BevGenie"
-      >
-        <svg className="w-6 h-6 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      </button>
+    <>
+      <div className="cta-section relative h-full flex items-center justify-center overflow-hidden px-6 py-6 bg-gradient-to-r from-[#0A1628] via-[#1e3a5f] to-[#0A1628]">
+        {/* Animated background elements */}
+        <div className="absolute top-[20%] right-[15%] w-[25%] h-[50%] bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-[20%] left-[15%] w-[25%] h-[50%] bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }} />
 
-      {/* Center Text (Optional) */}
-      <div className="relative z-10 text-center">
-        <p className="text-sm md:text-base text-slate-400">
-          {section.title || 'Ready to get started?'}
-        </p>
+        <div className="max-w-4xl w-full text-center space-y-6 relative z-10">
+          {/* Title */}
+          <h3 className="text-2xl md:text-3xl font-bold text-white">
+            {section.title || 'Ready to Transform Your Market Strategy?'}
+          </h3>
+
+          {/* Description (if provided) */}
+          {section.description && (
+            <p className="text-slate-300 text-base md:text-lg max-w-2xl mx-auto">
+              {section.description}
+            </p>
+          )}
+
+          {/* CTA Buttons */}
+          <div className="flex flex-wrap gap-4 justify-center pt-2">
+            <button
+              onClick={handleScheduleDemo}
+              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-bold text-white shadow-lg hover:shadow-cyan-500/50 transition-all hover:-translate-y-1"
+            >
+              Schedule Demo
+            </button>
+            <button
+              onClick={handleExploreTools}
+              className="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-1"
+            >
+              Explore Tools
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* PPT/Presentation Bubble - Right Corner */}
-      <button
-        onClick={() => onNavigationClick?.('download_presentation', { source: 'cta_ppt' })}
-        className="group relative z-10 w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-blue-500/50"
-        title="Download Presentation"
-      >
-        <svg className="w-6 h-6 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6" />
-        </svg>
-      </button>
-    </div>
+      {/* Demo Form Modal */}
+      {showDemoForm && (
+        <DemoForm
+          onClose={() => setShowDemoForm(false)}
+          context={section.title || 'CTA Section'}
+        />
+      )}
+    </>
   );
 }
 
