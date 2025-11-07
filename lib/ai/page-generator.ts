@@ -108,6 +108,28 @@ export async function generatePageSpec(
   try {
     const page = await attemptPageGeneration(request, 0, intentLayoutStrategy, intentClassification);
 
+    // Track generated content to prevent repetition (if sessionId provided)
+    if (request.sessionId) {
+      // Extract headline from first hero section
+      const heroSection = page.sections.find((s: any) => s.type === 'hero');
+      const headline = heroSection?.headline || page.title || '';
+
+      // Extract feature titles from feature_grid sections
+      const featureTitles: string[] = [];
+      page.sections.forEach((section: any) => {
+        if (section.type === 'feature_grid' && section.features) {
+          section.features.forEach((feature: any) => {
+            if (feature.title) {
+              featureTitles.push(feature.title);
+            }
+          });
+        }
+      });
+
+      // Track this content for future generations
+      trackGeneratedContent(request.sessionId, headline, featureTitles);
+    }
+
     // generateObject() with Zod automatically validates - no manual validation needed
     console.log('[PageGen] ✅ Intent-based generation successful');
     return {
@@ -208,6 +230,11 @@ function buildSystemPrompt(
 ): string {
   const contentGuidelines = CONTENT_GUIDELINES[intentClassification.intent];
 
+  // Get previously used content warnings (if sessionId provided)
+  const previousContentWarning = request.sessionId
+    ? getPreviouslyUsedContent(request.sessionId)
+    : '';
+
   // Build the EXACT section structure the LLM must generate
   const sectionRequirements = intentLayoutStrategy.sections.map((section, idx) => {
     return `${idx + 1}. ${section.type} section (${section.heightPercent}% height)
@@ -304,6 +331,8 @@ When generating feature_grid sections, feature titles MUST include one of these 
 - CTA sections: ALWAYS include buttons array with at least 2 buttons
 - Button text should be action-oriented: "Explore Features", "Schedule Demo", "Get Started"
 - Never leave CTA fields empty or null
+
+${previousContentWarning ? `\n${previousContentWarning}\n` : ''}
 
 SECTION JSON FORMAT (COPY EXACT HEIGHT VALUES):
 {

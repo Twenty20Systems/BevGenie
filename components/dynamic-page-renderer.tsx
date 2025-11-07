@@ -559,35 +559,35 @@ function CTASection({
 
   return (
     <>
-      <div className="cta-section relative h-full flex items-center justify-center overflow-hidden px-6 py-6 bg-gradient-to-r from-[#0A1628] via-[#1e3a5f] to-[#0A1628]">
+      <div className="cta-section relative h-full flex items-center justify-center overflow-hidden px-6 py-3 bg-gradient-to-r from-[#0A1628] via-[#1e3a5f] to-[#0A1628]">
         {/* Animated background elements */}
         <div className="absolute top-[20%] right-[15%] w-[25%] h-[50%] bg-cyan-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-[20%] left-[15%] w-[25%] h-[50%] bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1.5s' }} />
 
-        <div className="max-w-4xl w-full text-center space-y-6 relative z-10">
+        <div className="max-w-4xl w-full text-center space-y-3 relative z-10">
           {/* Title */}
-          <h3 className="text-2xl md:text-3xl font-bold text-white">
+          <h3 className="text-xl md:text-2xl font-bold text-white">
             {section.title || 'Ready to Transform Your Market Strategy?'}
           </h3>
 
           {/* Description (if provided) */}
           {section.description && (
-            <p className="text-slate-300 text-base md:text-lg max-w-2xl mx-auto">
+            <p className="text-slate-300 text-sm md:text-base max-w-2xl mx-auto">
               {section.description}
             </p>
           )}
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap gap-4 justify-center pt-2">
+          <div className="flex flex-wrap gap-3 justify-center pt-1">
             <button
               onClick={handleScheduleDemo}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-bold text-white shadow-lg hover:shadow-cyan-500/50 transition-all hover:-translate-y-1"
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-xl font-bold text-white shadow-lg hover:shadow-cyan-500/50 transition-all hover:-translate-y-1"
             >
               Schedule Demo
             </button>
             <button
               onClick={handleExploreTools}
-              className="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-1"
+              className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-1"
             >
               Explore Tools
             </button>
